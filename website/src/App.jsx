@@ -70,6 +70,9 @@ function App() {
                 View Features <ArrowRight size={20} />
               </a>
             </div>
+            <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              Available for Windows, macOS, and Linux
+            </div>
 
             <div className="mockup-container">
               <div className="mockup-frame">
@@ -160,6 +163,9 @@ function App() {
                 <Download size={24} />
                 Download Now
               </a>
+              <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                Available for Windows, macOS, and Linux
+              </div>
             </div>
           </div>
         </section>
