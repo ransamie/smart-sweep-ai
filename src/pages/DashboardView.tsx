@@ -215,19 +215,24 @@ export function DashboardView() {
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-6">
             {aiSummary ? (
-              <div className={`p-5 rounded-xl border ${aiSummary.startsWith('AI Error') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-background/60 backdrop-blur-md border-primary/10 shadow-sm'}`}>
-                <div className={`leading-relaxed ${aiSummary.startsWith('AI Error') ? 'font-medium' : 'text-foreground/90 prose prose-p:leading-relaxed prose-headings:text-primary prose-headings:font-semibold prose-strong:text-primary dark:prose-invert max-w-none text-[15px]'}`}>
-                  <ReactMarkdown>{aiSummary}</ReactMarkdown>
-                  {(!deepScanResults || deepScanResults.length === 0) && (
-                    <div className="mt-6 pt-4 border-t border-border/50">
-                      <Button variant="outline" onClick={() => navigate('/scan?autoStart=true')} className="gap-2 bg-background hover:bg-primary/10 hover:text-primary w-full sm:w-auto h-auto whitespace-normal text-left">
-                        <Search className="w-4 h-4 shrink-0" /> 
-                        <span>Run Space Analyzer for Personalized Advice</span>
-                      </Button>
+              (() => {
+                const isError = aiSummary.startsWith('AI Error') || aiSummary.includes('Quota') || aiSummary.includes('Rate Limit') || aiSummary.includes('⚠️') || aiSummary.includes('exceeded');
+                return (
+                  <div className={`p-5 rounded-xl border ${isError ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-background/60 backdrop-blur-md border-primary/10 shadow-sm'}`}>
+                    <div className={`leading-relaxed break-words [overflow-wrap:anywhere] ${isError ? 'font-medium' : 'text-foreground/90 prose prose-p:leading-relaxed prose-headings:text-primary prose-headings:font-semibold prose-strong:text-primary dark:prose-invert max-w-none text-[15px]'}`}>
+                      <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                      {(!deepScanResults || deepScanResults.length === 0) && (
+                        <div className="mt-6 pt-4 border-t border-border/50">
+                          <Button variant="outline" onClick={() => navigate('/scan?autoStart=true')} className="gap-2 bg-background hover:bg-primary/10 hover:text-primary w-full sm:w-auto h-auto whitespace-normal text-left">
+                            <Search className="w-4 h-4 shrink-0" /> 
+                            <span>Run Space Analyzer for Personalized Advice</span>
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                );
+              })()
             ) : (
               <div className="flex flex-col items-center justify-center h-32 space-y-4 text-muted-foreground">
                 <p>Get personalized storage advice using Gemini AI.</p>

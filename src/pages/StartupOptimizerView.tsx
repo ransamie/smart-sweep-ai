@@ -97,7 +97,7 @@ export function StartupOptimizerView() {
         </CardHeader>
         <CardContent>
           {aiRecommendation ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
+            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground break-words [overflow-wrap:anywhere]">
               <ReactMarkdown>{aiRecommendation}</ReactMarkdown>
             </div>
           ) : (
