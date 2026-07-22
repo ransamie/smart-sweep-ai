@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Key, ShieldCheck, HardDrive, Clock } from 'lucide-react';
+import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,38 @@ import { DriveSelector } from '@/components/DriveSelector';
 export function SettingsView() {
   const { apiKey, setApiKey, automationSettings, setAutomationSettings } = useAppContext();
   const [localKey, setLocalKey] = useState(apiKey || '');
-  const [savedNotice, setSavedNotice] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const handleSaveKey = () => {
-    setApiKey(localKey);
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 4000);
+  const handleSaveKey = async () => {
+    if (!localKey.trim()) {
+      setStatus({ type: 'error', message: 'Please enter an API Key.' });
+      return;
+    }
+
+    setValidating(true);
+    setStatus(null);
+
+    try {
+      // @ts-ignore
+      if (window.electronAPI?.validateApiKey) {
+        // @ts-ignore
+        const isValid = await window.electronAPI.validateApiKey(localKey.trim());
+        if (isValid) {
+          setApiKey(localKey.trim());
+          setStatus({ type: 'success', message: 'Validated & Saved!' });
+        } else {
+          setStatus({ type: 'error', message: 'Invalid API Key. Please verify key.' });
+        }
+      } else {
+        setApiKey(localKey.trim());
+        setStatus({ type: 'success', message: 'Saved!' });
+      }
+    } catch (e: any) {
+      setStatus({ type: 'error', message: e?.message || 'Key validation failed.' });
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -29,22 +55,42 @@ export function SettingsView() {
           <CardTitle className="flex items-center gap-2">
             <Key className="w-5 h-5 text-primary" /> API Configuration
           </CardTitle>
-          <CardDescription>Configure your connection to the Gemini API.</CardDescription>
+          <CardDescription>Configure and test your connection to the Gemini API.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Gemini API Key</label>
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-3 items-center flex-wrap">
               <Input 
                 type="password" 
                 value={localKey} 
-                onChange={(e) => setLocalKey(e.target.value)} 
+                onChange={(e) => {
+                  setLocalKey(e.target.value);
+                  setStatus(null);
+                }} 
+                placeholder="AIzaSy..."
                 className="max-w-md font-mono"
               />
-              <Button onClick={handleSaveKey}>Save Key</Button>
-              {savedNotice && <span className="text-xs text-green-400 font-medium animate-in fade-in">✓ Key saved & AI cache reset!</span>}
+              <Button onClick={handleSaveKey} disabled={validating} className="gap-2">
+                {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                {validating ? 'Validating…' : 'Save Key'}
+              </Button>
+
+              {status?.type === 'success' && (
+                <div className="flex items-center gap-1.5 text-xs text-green-400 font-semibold bg-green-500/10 border border-green-500/30 px-3 py-1.5 rounded-lg animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                  <span>{status.message}</span>
+                </div>
+              )}
+
+              {status?.type === 'error' && (
+                <div className="flex items-center gap-1.5 text-xs text-red-400 font-semibold bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-lg animate-in fade-in">
+                  <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{status.message}</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">Used exclusively for generating cleanup advice.</p>
+            <p className="text-xs text-muted-foreground">Used exclusively for generating system cleanup advice.</p>
           </div>
         </CardContent>
       </Card>

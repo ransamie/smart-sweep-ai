@@ -61,45 +61,72 @@ export async function toggleStartupItem(
 
 async function getWindowsStartupItems(): Promise<StartupItem[]> {
   const items: StartupItem[] = [];
+  const seenNames = new Set<string>();
 
-  // Dynamic import for registry-js (Windows-only package)
-  let registryJs: any;
+  // Primary: Use PowerShell Win32_StartupCommand (Matches Windows Task Manager Startup tab)
   try {
-    registryJs = await import('registry-js');
-  } catch {
-    console.warn('registry-js not available — skipping Registry startup scan');
-    return items;
-  }
-
-  const { enumerateValues, HKEY } = registryJs;
-
-  const registryLocations = [
-    { hive: HKEY.HKEY_CURRENT_USER, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKCU' },
-    { hive: HKEY.HKEY_LOCAL_MACHINE, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM' },
-  ];
-
-  for (const loc of registryLocations) {
-    try {
-      const values = enumerateValues(loc.hive, loc.key);
-      for (const val of values) {
-        if (val.type === 'REG_SZ' || val.type === 'REG_EXPAND_SZ') {
+    const { stdout } = await execFileAsync('powershell', [
+      '-NoProfile',
+      '-Command',
+      'Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location | ConvertTo-Json'
+    ]);
+    if (stdout.trim()) {
+      const parsed = JSON.parse(stdout);
+      const rawList = Array.isArray(parsed) ? parsed : [parsed];
+      for (const entry of rawList) {
+        if (entry.Name && !seenNames.has(entry.Name)) {
+          seenNames.add(entry.Name);
+          const isDisabled = (entry.Command || '').toLowerCase().includes('.disabled');
           items.push({
-            name: val.name,
-            path: val.data,
-            location: loc.locationName,
-            enabled: true,
+            name: entry.Name,
+            path: entry.Command || '',
+            location: entry.Location || 'Startup',
+            enabled: !isDisabled
           });
         }
       }
-    } catch (e) {
-      console.warn(`Failed to read registry key: ${loc.key}`, e);
     }
+  } catch (e) {
+    console.warn('Win32_StartupCommand PowerShell query failed, using registry fallback', e);
   }
 
-  // Startup folder
+  // Fallback / Supplementary scan via registry-js & folders
+  let registryJs: any;
+  try {
+    registryJs = await import('registry-js');
+    const { enumerateValues, HKEY } = registryJs;
+    const registryLocations = [
+      { hive: HKEY.HKEY_CURRENT_USER, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKCU' },
+      { hive: HKEY.HKEY_LOCAL_MACHINE, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM' },
+      { hive: HKEY.HKEY_LOCAL_MACHINE, key: '\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM64' },
+    ];
+
+    for (const loc of registryLocations) {
+      try {
+        const values = enumerateValues(loc.hive, loc.key);
+        for (const val of values) {
+          if ((val.type === 'REG_SZ' || val.type === 'REG_EXPAND_SZ') && !seenNames.has(val.name)) {
+            seenNames.add(val.name);
+            items.push({
+              name: val.name,
+              path: val.data,
+              location: loc.locationName,
+              enabled: true,
+            });
+          }
+        }
+      } catch (e) {
+        // Skip inaccessible key
+      }
+    }
+  } catch {
+    // Registry-js fallback ignored
+  }
+
+  // Startup folder scan
   try {
     const { app } = await import('electron');
-    const startupFolderPath = path.join(
+    const userStartupDir = path.join(
       app.getPath('appData'),
       'Microsoft',
       'Windows',
@@ -107,18 +134,25 @@ async function getWindowsStartupItems(): Promise<StartupItem[]> {
       'Programs',
       'Startup',
     );
-    const files = await readdir(startupFolderPath, { withFileTypes: true });
-    for (const file of files) {
-      if (file.isFile()) {
-        const isDisabled = file.name.endsWith('.disabled');
-        const displayName = isDisabled ? file.name.slice(0, -9) : file.name;
-        items.push({
-          name: displayName,
-          path: path.join(startupFolderPath, file.name),
-          location: 'Folder',
-          enabled: !isDisabled,
-        });
-      }
+    const commonStartupDir = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup';
+
+    for (const dir of [userStartupDir, commonStartupDir]) {
+      try {
+        const files = await readdir(dir, { withFileTypes: true });
+        for (const file of files) {
+          if (file.isFile() && !seenNames.has(file.name)) {
+            const isDisabled = file.name.endsWith('.disabled');
+            const displayName = isDisabled ? file.name.slice(0, -9) : file.name;
+            seenNames.add(displayName);
+            items.push({
+              name: displayName,
+              path: path.join(dir, file.name),
+              location: 'Startup Folder',
+              enabled: !isDisabled,
+            });
+          }
+        }
+      } catch {}
     }
   } catch (e) {
     console.warn('Failed to read startup folder', e);

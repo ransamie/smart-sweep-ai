@@ -395,6 +395,11 @@ ipcMain.handle('window-close', () => {
 });
 ipcMain.handle('send-notification', (_, title: string, body: string) => {
   try {
+    // Only send desktop notifications if the user is NOT actively focusing the app window (e.g. minimized or in background)
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused()) {
+      return;
+    }
+
     if (Notification.isSupported()) {
       const notification = new Notification({ title, body, icon: path.join(__dirname, '../build/icon.png') });
       notification.on('click', () => revealMainWindow());

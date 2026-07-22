@@ -98,52 +98,71 @@ export function PrivacyShieldView() {
             <label htmlFor="firefox" className="flex items-center gap-2 cursor-pointer font-medium">Mozilla Firefox</label>
           </div>
           
-          <div className="flex gap-4 mt-6">
-            <Button onClick={handleScan} disabled={scanning || cleaning} variant="outline" className="gap-2">
-              {scanning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {scanning ? 'Scanning...' : 'Scan Browsers'}
-            </Button>
-            <Button onClick={handleClean} disabled={scanning || cleaning} className="gap-2">
-              {cleaning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-              {cleaning ? 'Clean Selected' : 'Clean Selected'}
-            </Button>
-          </div>
+          {/* Filter selected browsers */}
+          {(() => {
+            const selectedBrowsers = Object.keys(options).filter(k => options[k as keyof typeof options]);
+            const totalSelectedCacheBytes = results
+              ? results
+                  .filter((r: any) => selectedBrowsers.includes(r.browser.toLowerCase()))
+                  .reduce((sum: number, r: any) => sum + (r.totalSize || 0), 0)
+              : 0;
+            const isCleanDisabled = scanning || cleaning || !results || totalSelectedCacheBytes === 0;
 
-          {lockedWarning && (
-            <div className="mt-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs leading-relaxed">
-              {lockedWarning}
-            </div>
-          )}
+            const visibleResults = results 
+              ? results.filter((r: any) => options[r.browser.toLowerCase() as keyof typeof options])
+              : null;
 
-          {results && (
-            <div className="mt-8 space-y-4">
-              <h3 className="text-xl font-semibold mb-4">Scan Results</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {results.map((r: any, i: number) => (
-                  <Card key={i} className="bg-muted/10 border-primary/20">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg capitalize flex items-center gap-2">
-                        {r.browser === 'chrome' && <Chrome className="w-5 h-5 text-blue-500" />}
-                        {r.browser === 'firefox' && <Shield className="w-5 h-5 text-orange-500" />}
-                        {r.browser === 'edge' && <Search className="w-5 h-5 text-blue-400" />}
-                        {r.browser}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-1 text-sm text-muted-foreground">
-                      <div className="flex justify-between">
-                        <span>Cache:</span>
-                        <span className="font-medium text-foreground">{(r.cacheSize / (1024 * 1024)).toFixed(2)} MB</span>
-                      </div>
-                      <div className="flex justify-between border-t pt-1 mt-1">
-                        <span>Total:</span>
-                        <span className="font-medium text-foreground">{(r.totalSize / (1024 * 1024)).toFixed(2)} MB</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+            return (
+              <>
+                <div className="flex gap-4 mt-6">
+                  <Button onClick={handleScan} disabled={scanning || cleaning} variant="outline" className="gap-2">
+                    {scanning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {scanning ? 'Scanning...' : 'Scan Browsers'}
+                  </Button>
+                  <Button onClick={handleClean} disabled={isCleanDisabled} className="gap-2">
+                    {cleaning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                    {cleaning ? 'Clean Selected' : 'Clean Selected'}
+                  </Button>
+                </div>
+
+                {lockedWarning && (
+                  <div className="mt-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs leading-relaxed">
+                    {lockedWarning}
+                  </div>
+                )}
+
+                {visibleResults && visibleResults.length > 0 && (
+                  <div className="mt-8 space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Scan Results</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {visibleResults.map((r: any, i: number) => (
+                        <Card key={i} className="bg-muted/10 border-primary/20">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg capitalize flex items-center gap-2">
+                              {r.browser === 'chrome' && <Chrome className="w-5 h-5 text-blue-500" />}
+                              {r.browser === 'firefox' && <Shield className="w-5 h-5 text-orange-500" />}
+                              {r.browser === 'edge' && <Search className="w-5 h-5 text-blue-400" />}
+                              {r.browser}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-1 text-sm text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Cache:</span>
+                              <span className="font-medium text-foreground">{(r.cacheSize / (1024 * 1024)).toFixed(2)} MB</span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1 mt-1">
+                              <span>Total:</span>
+                              <span className="font-medium text-foreground">{(r.totalSize / (1024 * 1024)).toFixed(2)} MB</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>
