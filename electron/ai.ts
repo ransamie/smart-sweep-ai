@@ -17,7 +17,30 @@ interface CacheEntry {
 }
 
 const aiCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minute in-memory cache to conserve API quota
+class SlidingWindowRateLimiter {
+  private timestamps: number[] = [];
+  private maxPerMinute: number = 10; // Cap at 10 requests / 60s (safely under Gemini's 20 RPM ceiling)
+
+  async waitForSlot(): Promise<void> {
+    while (true) {
+      const now = Date.now();
+      // Remove timestamps older than 60,000 ms
+      this.timestamps = this.timestamps.filter(ts => now - ts < 60000);
+
+      if (this.timestamps.length < this.maxPerMinute) {
+        this.timestamps.push(now);
+        return;
+      }
+
+      // Wait until the oldest request drops off the 60s window
+      const oldest = this.timestamps[0];
+      const waitTimeMs = Math.max(200, 60000 - (now - oldest) + 200);
+      await new Promise(resolve => setTimeout(resolve, waitTimeMs));
+    }
+  }
+}
+
+const rateLimiter = new SlidingWindowRateLimiter();
 
 async function callGeminiApi(apiKey: string, prompt: string, cacheKey?: string): Promise<string> {
   if (!apiKey) {
@@ -30,6 +53,9 @@ async function callGeminiApi(apiKey: string, prompt: string, cacheKey?: string):
       return cached.result;
     }
   }
+
+  // Wait for an available rate limiter slot (ensures user never breaches 20 req/min)
+  await rateLimiter.waitForSlot();
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {

@@ -193,6 +193,36 @@ export function DeepScanView() {
     }
   };
 
+  const [fileExplanations, setFileExplanations] = useState<Record<string, string>>({});
+  const [explainingFilePath, setExplainingFilePath] = useState<string | null>(null);
+
+  const handleExplainFile = async (filePath: string) => {
+    if (fileExplanations[filePath]) {
+      setFileExplanations(prev => {
+        const copy = { ...prev };
+        delete copy[filePath];
+        return copy;
+      });
+      return;
+    }
+    setExplainingFilePath(filePath);
+    try {
+      // @ts-ignore
+      if (window.electronAPI && window.electronAPI.explainPath) {
+        // @ts-ignore
+        const res = await window.electronAPI.explainPath(apiKey, filePath);
+        setFileExplanations(prev => ({
+          ...prev,
+          [filePath]: typeof res === 'string' ? res : (res?.error || 'Could not explain file.')
+        }));
+      }
+    } catch (e: any) {
+      console.error(e);
+    } finally {
+      setExplainingFilePath(null);
+    }
+  };
+
   const handleOpenFolder = async (filePath: string) => {
     try {
       // @ts-ignore
@@ -372,36 +402,63 @@ export function DeepScanView() {
 
               <div className="border rounded-md divide-y">
                 {results.map((file) => (
-                  <div key={file.id} className="flex items-center p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center h-5">
-                      <input
-                        type="checkbox"
-                        id={`file-${file.id}`}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        checked={selected.has(file.id)}
-                        onChange={() => toggleSelect(file.id)}
-                      />
+                  <div key={file.id} className="p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center">
+                      <div className="flex items-center h-5">
+                        <input
+                          type="checkbox"
+                          id={`file-${file.id}`}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                          checked={selected.has(file.id)}
+                          onChange={() => toggleSelect(file.id)}
+                        />
+                      </div>
+                      <label htmlFor={`file-${file.id}`} className="ml-4 flex-1 cursor-pointer min-w-0">
+                        <p className="text-sm font-medium leading-none text-foreground">{file.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1 truncate max-w-xl" title={file.path}>
+                          {file.path}
+                        </p>
+                      </label>
+                      <div className="ml-4 flex items-center gap-2 shrink-0">
+                        <span className="text-sm text-muted-foreground font-mono mr-2">
+                          {formatSize(file.size)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => handleExplainFile(file.path)}
+                          disabled={explainingFilePath === file.path}
+                        >
+                          {explainingFilePath === file.path ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          )}
+                          {explainingFilePath === file.path ? 'Analyzing…' : (fileExplanations[file.path] ? 'Hide Info' : 'AI Info')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => handleOpenFolder(file.path)}
+                          title="Open in File Explorer"
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <label htmlFor={`file-${file.id}`} className="ml-4 flex-1 cursor-pointer min-w-0">
-                      <p className="text-sm font-medium leading-none text-foreground">{file.name}</p>
-                      <p className="text-sm text-muted-foreground mt-1 truncate max-w-xl" title={file.path}>
-                        {file.path}
-                      </p>
-                    </label>
-                    <div className="ml-4 flex items-center gap-4 shrink-0">
-                      <span className="text-sm text-muted-foreground font-mono">
-                        {formatSize(file.size)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => handleOpenFolder(file.path)}
-                        title="Open in File Explorer"
-                      >
-                        <FolderOpen className="w-4 h-4" />
-                      </Button>
-                    </div>
+
+                    {fileExplanations[file.path] && (
+                      <div className="mt-3 ml-8 p-3 rounded-lg border border-primary/20 bg-primary/5 text-xs text-foreground leading-relaxed animate-in fade-in">
+                        <div className="flex items-center gap-1.5 font-semibold text-primary mb-1">
+                          <Sparkles className="w-3.5 h-3.5" /> AI File Explanation ({file.name}):
+                        </div>
+                        <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground">
+                          <ReactMarkdown>{fileExplanations[file.path]}</ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
