@@ -22,6 +22,7 @@ export function DashboardView() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingAI, setLoadingAI] = useState(false);
+  const [showFullAiModal, setShowFullAiModal] = useState(false);
 
   const runSmartScan = async (showNotification = false) => {
     setSmartScanning(true);
@@ -197,47 +198,59 @@ export function DashboardView() {
           </CardContent>
         </Card>
 
-        <Card className="flex-1 w-full min-w-[320px] max-w-full border-primary/20 bg-gradient-to-br from-primary/5 to-transparent flex flex-col shadow-lg">
-          <CardHeader className="border-b border-primary/10 pb-4 bg-primary/5">
+        <Card className="flex-1 w-full min-w-[320px] max-w-full border-primary/20 bg-gradient-to-br from-primary/5 to-transparent flex flex-col shadow-lg max-h-[350px]">
+          <CardHeader className="border-b border-primary/10 pb-3 bg-primary/5 shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2 text-primary text-lg">
-                  <Sparkles className="w-5 h-5" /> AI System Summary
+                <CardTitle className="flex items-center gap-2 text-primary text-base font-semibold">
+                  <Sparkles className="w-4 h-4" /> AI System Summary
                 </CardTitle>
-                <CardDescription className="text-primary/70">Personalized recommendations based on your system state.</CardDescription>
+                <CardDescription className="text-xs text-primary/70">Personalized recommendations based on your system state.</CardDescription>
               </div>
               {aiSummary && (
-                <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0 bg-background/50 backdrop-blur-sm rounded-full">
-                  <RefreshCw className={`w-4 h-4 ${loadingAI ? 'animate-spin' : ''}`} />
+                <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0 bg-background/50 backdrop-blur-sm rounded-full">
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingAI ? 'animate-spin' : ''}`} />
                 </Button>
               )}
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-6">
+          <CardContent className="flex-1 overflow-hidden p-4 flex flex-col justify-between">
             {aiSummary ? (
               (() => {
                 const isError = aiSummary.startsWith('AI Error') || aiSummary.includes('Quota') || aiSummary.includes('Rate Limit') || aiSummary.includes('⚠️') || aiSummary.includes('exceeded');
+                const isLong = aiSummary.length > 200;
                 return (
-                  <div className={`p-5 rounded-xl border ${isError ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-background/60 backdrop-blur-md border-primary/10 shadow-sm'}`}>
-                    <div className={`leading-relaxed break-words [overflow-wrap:anywhere] ${isError ? 'font-medium' : 'text-foreground/90 prose prose-p:leading-relaxed prose-headings:text-primary prose-headings:font-semibold prose-strong:text-primary dark:prose-invert max-w-none text-[15px]'}`}>
-                      <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                  <div className={`p-4 rounded-xl border flex flex-col justify-between h-full ${isError ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-background/60 backdrop-blur-md border-primary/10 shadow-sm'}`}>
+                    <div className="relative flex-1 overflow-hidden max-h-[140px]">
+                      <div className={`leading-relaxed break-words [overflow-wrap:anywhere] ${isError ? 'font-medium text-xs' : 'text-foreground/90 prose prose-p:leading-relaxed prose-headings:text-primary prose-headings:font-semibold prose-strong:text-primary dark:prose-invert max-w-none text-xs'}`}>
+                        <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                      </div>
+                      {isLong && (
+                        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-background/90 via-background/60 to-transparent pointer-events-none" />
+                      )}
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/40 shrink-0">
+                      {isLong ? (
+                        <Button variant="ghost" size="sm" onClick={() => setShowFullAiModal(true)} className="text-xs text-primary hover:text-primary/80 p-0 h-auto font-medium gap-1">
+                          Read More →
+                        </Button>
+                      ) : <div />}
+
                       {(!deepScanResults || deepScanResults.length === 0) && (
-                        <div className="mt-6 pt-4 border-t border-border/50">
-                          <Button variant="outline" onClick={() => navigate('/scan?autoStart=true')} className="gap-2 bg-background hover:bg-primary/10 hover:text-primary w-full sm:w-auto h-auto whitespace-normal text-left">
-                            <Search className="w-4 h-4 shrink-0" /> 
-                            <span>Run Space Analyzer for Personalized Advice</span>
-                          </Button>
-                        </div>
+                        <Button variant="outline" size="sm" onClick={() => navigate('/scan?autoStart=true')} className="gap-1.5 text-xs h-7 bg-background hover:bg-primary/10 hover:text-primary">
+                          <Search className="w-3.5 h-3.5 shrink-0" /> Space Analyzer
+                        </Button>
                       )}
                     </div>
                   </div>
                 );
               })()
             ) : (
-              <div className="flex flex-col items-center justify-center h-32 space-y-4 text-muted-foreground">
-                <p>Get personalized storage advice using Gemini AI.</p>
-                <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} className="gap-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20">
-                  {loadingAI ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              <div className="flex flex-col items-center justify-center h-full space-y-3 text-muted-foreground py-6">
+                <p className="text-xs">Get personalized storage advice using Gemini AI.</p>
+                <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} size="sm" className="gap-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 text-xs">
+                  {loadingAI ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                   {loadingAI ? 'Analyzing...' : 'Generate AI Advice'}
                 </Button>
               </div>
@@ -290,6 +303,30 @@ export function DashboardView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Full AI Advice Modal */}
+      {showFullAiModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowFullAiModal(false)}>
+          <div className="bg-card border border-primary/30 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative flex flex-col space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border/50 pb-3">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                <Sparkles className="w-5 h-5" /> AI Recommendation Details
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowFullAiModal(false)} className="h-8 px-3 text-xs">
+                Close
+              </Button>
+            </div>
+            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed break-words [overflow-wrap:anywhere] p-2">
+              <ReactMarkdown>{aiSummary}</ReactMarkdown>
+            </div>
+            <div className="pt-3 border-t border-border/40 flex justify-end">
+              <Button size="sm" onClick={() => setShowFullAiModal(false)}>
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
