@@ -32,7 +32,8 @@ function App() {
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container nav-container">
           <a href="#" className="logo">
-            <AppIcon /> SmartSweep AI
+            <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 32, height: 32, borderRadius: '8px', objectFit: 'contain' }} />
+            <span>SmartSweep AI</span>
           </a>
           <div className="nav-links">
             <a href="https://github.com/ransamie/smart-sweep-ai/releases/latest" className="btn btn-primary">
@@ -82,7 +83,7 @@ function App() {
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FFBD2E' }}></div>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#27C93F' }}></div>
                 </div>
-                <img src="/dashboard-mockup.png" alt="SmartSweep AI Dashboard" className="mockup-img" style={{ width: '100%', height: 'auto', minHeight: '400px', background: '#0A0A0F', objectFit: 'cover' }} onError={(e) => {
+                <img src="/dashboard-mockup.png" alt="SmartSweep AI Dashboard" className="mockup-img" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '0 0 12px 12px' }} onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';
                 }}/>
