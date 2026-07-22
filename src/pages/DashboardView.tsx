@@ -220,8 +220,9 @@ export function DashboardView() {
                   <ReactMarkdown>{aiSummary}</ReactMarkdown>
                   {(!deepScanResults || deepScanResults.length === 0) && (
                     <div className="mt-6 pt-4 border-t border-border/50">
-                      <Button variant="outline" onClick={() => navigate('/scan?autoStart=true')} className="gap-2 bg-background hover:bg-primary/10 hover:text-primary w-full sm:w-auto">
-                        <Search className="w-4 h-4" /> Run Space Analyzer for Personalized Advice
+                      <Button variant="outline" onClick={() => navigate('/scan?autoStart=true')} className="gap-2 bg-background hover:bg-primary/10 hover:text-primary w-full sm:w-auto h-auto whitespace-normal text-left">
+                        <Search className="w-4 h-4 shrink-0" /> 
+                        <span>Run Space Analyzer for Personalized Advice</span>
                       </Button>
                     </div>
                   )}
