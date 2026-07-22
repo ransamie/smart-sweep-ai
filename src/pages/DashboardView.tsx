@@ -180,14 +180,14 @@ export function DashboardView() {
                           <span className="font-semibold text-foreground font-mono shrink-0">{(diskSpace.free / 1073741824).toFixed(1)} GB</span>
                         </div>
                         <div className="flex items-center justify-between py-1 border-b border-border/40 gap-2">
-                          <span className="text-muted-foreground whitespace-nowrap">Privacy Risks</span>
+                          <span className="text-muted-foreground whitespace-nowrap">Browser Traces</span>
                           <div className="flex items-center gap-2">
-                            <span className={smartMetrics ? (smartMetrics.privacy > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
-                              {smartMetrics ? `${smartMetrics.privacy} risks` : 'Not Scanned'}
+                            <span className={smartMetrics ? (smartMetrics.privacy > 0 ? "text-amber-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
+                              {smartMetrics ? `${smartMetrics.privacy} traces` : 'Not Scanned'}
                             </span>
                             {smartMetrics && smartMetrics.privacy > 0 && (
-                              <button onClick={() => navigate('/privacy')} className="text-[10px] bg-red-500/20 text-red-400 hover:bg-red-500/30 px-1.5 py-0.5 rounded font-medium transition-colors">
-                                Fix →
+                              <button onClick={() => navigate('/privacy')} className="text-[10px] bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-1.5 py-0.5 rounded font-medium transition-colors">
+                                Clear →
                               </button>
                             )}
                           </div>
