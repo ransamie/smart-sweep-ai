@@ -213,7 +213,7 @@ export function DeepScanView() {
         const res = await window.electronAPI.explainPath(apiKey, filePath);
         setFileExplanations(prev => ({
           ...prev,
-          [filePath]: typeof res === 'string' ? res : (res?.error || 'Could not explain file.')
+          [filePath]: typeof res === 'string' ? res : ((res as any)?.error || 'Could not explain file.')
         }));
       }
     } catch (e: any) {
