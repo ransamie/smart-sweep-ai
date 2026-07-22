@@ -54,8 +54,13 @@ export function PrivacyShieldView() {
         const browsersToClean = Object.keys(options).filter(k => options[k as keyof typeof options]);
         // @ts-ignore
         const res = await window.electronAPI.cleanBrowserPrivacy(browsersToClean);
-        if (res && res.totalFailed > 0) {
-          setLockedWarning("⚠️ Notice: Some cache files could not be cleared because your web browser (Chrome, Edge, or Firefox) is currently open. Please close your web browser and click 'Clean Selected' again.");
+        if (res) {
+          if (res.openBrowsers && res.openBrowsers.length > 0) {
+            const browserList = res.openBrowsers.join(', ');
+            setLockedWarning(`⚠️ Notice: ${browserList} is currently running in the background (even if you closed its window, Chrome/Edge background processes often remain active in the System Tray). Please right-click ${browserList} in the System Tray and Exit, then click 'Clean Selected' again.`);
+          } else if (res.totalFailed > 0) {
+            setLockedWarning(`⚠️ Notice: ${res.totalFailed} cache files were locked by active system processes and safely skipped.`);
+          }
         }
         await handleScan();
       }

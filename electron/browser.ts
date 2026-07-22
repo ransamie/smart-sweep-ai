@@ -181,7 +181,49 @@ export async function scanBrowserPrivacy(): Promise<BrowserScanResult[]> {
   return results;
 }
 
-export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDeleted: number; totalFailed: number }> {
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+const execFileAsync = promisify(execFile);
+
+export async function getRunningBrowsers(): Promise<string[]> {
+  const running: string[] = [];
+  const platform = os.platform();
+
+  try {
+    if (platform === 'win32') {
+      const { stdout } = await execFileAsync('powershell', [
+        '-NoProfile',
+        '-Command',
+        'Get-Process chrome, msedge, firefox -ErrorAction SilentlyContinue | Select-Object -Unique ProcessName | ConvertTo-Json'
+      ]);
+      if (stdout.trim()) {
+        const parsed = JSON.parse(stdout);
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+        const names = list.map((p: any) => (p.ProcessName || '').toLowerCase());
+        if (names.includes('chrome')) running.push('Google Chrome');
+        if (names.includes('msedge')) running.push('Microsoft Edge');
+        if (names.includes('firefox')) running.push('Mozilla Firefox');
+      }
+    } else {
+      const { stdout } = await execFileAsync('ps', ['aux']);
+      const lower = stdout.toLowerCase();
+      if (lower.includes('chrome')) running.push('Google Chrome');
+      if (lower.includes('msedge')) running.push('Microsoft Edge');
+      if (lower.includes('firefox')) running.push('Mozilla Firefox');
+    }
+  } catch (e) {
+    // Process check fallback
+  }
+
+  return running;
+}
+
+export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDeleted: number; totalFailed: number; openBrowsers: string[] }> {
+  const runningBrowsers = await getRunningBrowsers();
+  const selectedRunning = runningBrowsers.filter(rb => 
+    browsers.some(b => rb.toLowerCase().includes(b.toLowerCase()))
+  );
+
   const browserPaths = getBrowserPaths();
   let totalDeleted = 0;
   let totalFailed = 0;
@@ -218,5 +260,5 @@ export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDe
     }
   }
 
-  return { totalDeleted, totalFailed };
+  return { totalDeleted, totalFailed, openBrowsers: selectedRunning };
 }
