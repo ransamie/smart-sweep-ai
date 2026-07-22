@@ -15,6 +15,15 @@ win:
       arch:
         - x64
   requestedExecutionLevel: requireAdministrator
+mac:
+  target: dmg
+  icon: build/icon.icns
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icon.png
+  category: Utility
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
