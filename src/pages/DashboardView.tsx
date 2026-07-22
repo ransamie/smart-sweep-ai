@@ -103,7 +103,8 @@ export function DashboardView() {
     }
 
     void runSmartScan(false);
-    void fetchSummary();
+    // We intentionally do not auto-fetch the AI summary on startup
+    // to save tokens and prevent unwanted API calls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
