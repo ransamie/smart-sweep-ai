@@ -8,6 +8,7 @@ import { DriveSelector } from '@/components/DriveSelector';
 
 export function SettingsView() {
   const { apiKey, setApiKey, automationSettings, setAutomationSettings } = useAppContext();
+  const [localKey, setLocalKey] = useState(apiKey || '');
   const [savedNotice, setSavedNotice] = useState(false);
 
   const handleSaveKey = () => {
