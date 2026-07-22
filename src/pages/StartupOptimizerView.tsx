@@ -85,7 +85,7 @@ export function StartupOptimizerView() {
         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           <Rocket className="w-8 h-8 text-primary" /> Startup Optimizer
         </h2>
-        <p className="text-muted-foreground mt-1">Premium feature: Manage apps that start with Windows to speed up boot time.</p>
+        <p className="text-muted-foreground mt-1">Premium feature: Manage apps that start with your system to speed up boot time.</p>
       </div>
 
       <Card className="border-primary/20 bg-primary/5">

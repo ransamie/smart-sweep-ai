@@ -17,7 +17,7 @@ export async function generateCleanupAdvice(apiKey: string, scanSummary: any): P
   }
 
   try {
-    const prompt = `You are a helpful IT assistant. I have scanned my Windows system. Here is a summary of my storage:
+    const prompt = `You are a helpful IT assistant. I have scanned my current system. Here is a summary of my storage:
 ${JSON.stringify(scanSummary, null, 2)}
 
 Provide concise, plain-English advice on what I can safely delete. If top files are listed, specifically mention which of those exact files might be taking up the most space and whether they seem safe to remove (e.g. installers, temp files).`;
@@ -56,7 +56,7 @@ export async function explainPath(apiKey: string, targetPath: string): Promise<s
   }
 
   try {
-    const prompt = `You are a helpful IT assistant. A user is looking at this folder on their Windows PC:
+    const prompt = `You are a helpful IT assistant. A user is looking at this folder on their current system:
 "${targetPath}"
 
 Provide a concise, plain-English explanation (2-3 sentences) of what this folder typically contains, what application it belongs to (if known), and whether it is generally safe to delete its contents to free up space. Format your response in markdown.`;
@@ -95,7 +95,7 @@ export async function analyzeStartup(apiKey: string, items: any[]): Promise<stri
   }
 
   try {
-    const prompt = `You are a helpful IT assistant. Here is a list of my Windows startup items:
+    const prompt = `You are a helpful IT assistant. Here is a list of my system startup items:
 ${JSON.stringify(items, null, 2)}
 
 Provide a concise, plain-English recommendation on which items I should safely disable to improve my boot times.`;

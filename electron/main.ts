@@ -463,9 +463,10 @@ ipcMain.handle('get-system-paths', () => {
   };
 });
 
-ipcMain.handle('get-disk-space', async (event, drivePath = 'C:\\') => {
+ipcMain.handle('get-disk-space', async (event, drivePath?: string) => {
   try {
-    const stats = await statfs(drivePath);
+    const targetPath = drivePath || (os.platform() === 'win32' ? 'C:\\' : '/');
+    const stats = await statfs(targetPath);
     const total = stats.bsize * stats.blocks;
     const free = stats.bsize * stats.bavail;
     return {
@@ -481,10 +482,24 @@ ipcMain.handle('get-disk-space', async (event, drivePath = 'C:\\') => {
 
 ipcMain.handle('get-orphaned-data', async () => {
   try {
-    const roamingPath = app.getPath('appData'); // AppData/Roaming
-    const localPath = path.join(app.getPath('appData'), '..', 'Local'); // AppData/Local
+    const platform = os.platform();
+    let searchDirs: string[] = [];
 
-    // Read folder names from both AppData dirs
+    if (platform === 'win32') {
+      const roamingPath = app.getPath('appData');
+      const localPath = path.join(app.getPath('appData'), '..', 'Local');
+      searchDirs = [roamingPath, localPath];
+    } else if (platform === 'darwin') {
+      searchDirs = [
+        path.join(os.homedir(), 'Library', 'Application Support'),
+      ];
+    } else {
+      // Linux
+      searchDirs = [
+        path.join(os.homedir(), '.local', 'share'),
+      ];
+    }
+
     const readFolders = async (dirPath: string) => {
       try {
         const entries = await readdir(dirPath, { withFileTypes: true });
@@ -496,12 +511,8 @@ ipcMain.handle('get-orphaned-data', async () => {
       }
     };
 
-    const [roamingFolders, localFolders] = await Promise.all([
-      readFolders(roamingPath),
-      readFolders(localPath),
-    ]);
-
-    const allFolders = [...roamingFolders, ...localFolders];
+    const folderResults = await Promise.all(searchDirs.map(d => readFolders(d)));
+    const allFolders = folderResults.flat();
 
     // Get installed app names
     const installedAppsInfo = await getInstalledApps();
@@ -509,8 +520,6 @@ ipcMain.handle('get-orphaned-data', async () => {
       .map((a: any) => (a.displayName || '').toLowerCase())
       .filter((n: string) => n.length > 0);
 
-    // A folder is "orphaned" if none of the installed app names contains it
-    // (or vice versa — no installed app name substring-matches the folder name)
     const orphaned = allFolders.filter(({ folderName }) => {
       const folderLower = folderName.toLowerCase();
       return !installedNames.some(
@@ -518,7 +527,6 @@ ipcMain.handle('get-orphaned-data', async () => {
       );
     });
 
-    // Limit to 20 results
     return orphaned.slice(0, 20).map(({ folderName, folderPath }) => ({
       folderName,
       folderPath,
@@ -531,17 +539,30 @@ ipcMain.handle('get-orphaned-data', async () => {
 });
 
 ipcMain.handle('get-drives', async () => {
-  const { access, constants } = await import('fs/promises');
+  const platform = os.platform();
   const drives: Array<{ letter: string; root: string; label: string; total: number; free: number; used: number }> = [];
-  for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
-    const root = `${letter}:\\`;
+
+  if (platform === 'win32') {
+    const { access, constants } = await import('fs/promises');
+    for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
+      const root = `${letter}:\\`;
+      try {
+        await access(root, constants.F_OK);
+        const stats = await statfs(root);
+        const total = stats.bsize * stats.blocks;
+        const free = stats.bsize * stats.bavail;
+        drives.push({ letter, root, label: `${letter}: Drive`, total, free, used: total - free });
+      } catch { /* drive not available */ }
+    }
+  } else {
+    // macOS / Linux — root mount point
     try {
-      await access(root, constants.F_OK);
-      const stats = await statfs(root);
+      const stats = await statfs('/');
       const total = stats.bsize * stats.blocks;
       const free = stats.bsize * stats.bavail;
-      drives.push({ letter, root, label: `${letter}: Drive`, total, free, used: total - free });
-    } catch { /* drive not available */ }
+      drives.push({ letter: '/', root: '/', label: 'System Volume', total, free, used: total - free });
+    } catch { /* ignore */ }
   }
+
   return drives;
 });

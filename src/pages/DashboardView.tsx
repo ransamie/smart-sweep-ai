@@ -53,7 +53,7 @@ export function DashboardView() {
           // @ts-ignore
           window.electronAPI.sendNotification(
             'Smart Scan Finished',
-            `Smart Scan finished! PC Health Score updated.`
+            `Smart Scan finished! System Health Score updated.`
           );
         }
       }
@@ -83,10 +83,11 @@ export function DashboardView() {
           freeSpace: diskSpace?.free,
           topFiles: topFiles.length > 0 ? topFiles : 'No space analyzer results yet. Run the Space Analyzer to get specific file advice.'
         });
-        if (typeof summary === 'object' && summary.error) {
-          setAiSummary(`AI Error: ${summary.error}`);
+        const aiResult = summary as { error?: string } | null;
+        if (aiResult?.error) {
+          setAiSummary(`AI Error: ${aiResult.error}`);
         } else {
-          setAiSummary(summary);
+          setAiSummary(typeof summary === 'string' ? summary : 'Failed to fetch AI summary. Ensure your API key is valid.');
         }
       }
     } catch (e) {
@@ -123,7 +124,7 @@ export function DashboardView() {
             <CardTitle className="flex items-center gap-2 text-base font-semibold whitespace-nowrap">
               <HardDrive className="w-5 h-5 text-primary shrink-0"/> Storage Health
             </CardTitle>
-            <CardDescription className="text-xs">PC Health Score</CardDescription>
+            <CardDescription className="text-xs">System Health Score</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-start py-4 space-y-4">
             {diskSpace ? (

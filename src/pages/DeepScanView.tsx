@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 
-const FALLBACK_PATH = 'C:\\Windows\\Temp';
+const FALLBACK_PATH = '/tmp';
 const SIMULATE_DURATION_MS = 3500;
 
 export function DeepScanView() {

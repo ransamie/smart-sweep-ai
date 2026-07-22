@@ -54,17 +54,17 @@ function App() {
             
             <h1 style={{ fontSize: 'clamp(3rem, 5vw, 4.5rem)', fontWeight: 800, marginBottom: '1.5rem' }}>
               The Intelligent Way to <br />
-              <span className="gradient-text">Reclaim Your PC</span>
+              <span className="gradient-text">Reclaim Your System</span>
             </h1>
             
             <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-              SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your Windows PC.
+              SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your system.
             </p>
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <a href="https://github.com/ransamie/smart-sweep-ai/releases/latest" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
                 <Download size={20} />
-                Download for Windows
+                Download Now
               </a>
               <a href="#features" className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
                 View Features <ArrowRight size={20} />
@@ -142,7 +142,7 @@ function App() {
                 </div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Smart Sweep Automation</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Set it and forget it. SmartSweep AI can automatically clean your PC at a scheduled time every day while you are away from your desk.
+                  Set it and forget it. SmartSweep AI can automatically clean your system at a scheduled time every day while you are away from your desk.
                 </p>
               </div>
 
@@ -154,7 +154,7 @@ function App() {
         <section className="section" style={{ textAlign: 'center' }}>
           <div className="container">
             <div className="glass-card" style={{ padding: '4rem 2rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(139,92,246,0.1) 100%)' }}>
-              <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '1.5rem' }}>Ready to optimize your PC?</h2>
+              <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '1.5rem' }}>Ready to optimize your system?</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem', marginBottom: '2.5rem' }}>Download SmartSweep AI today and reclaim your gigabytes.</p>
               <a href="https://github.com/ransamie/smart-sweep-ai/releases/latest" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.25rem' }}>
                 <Download size={24} />

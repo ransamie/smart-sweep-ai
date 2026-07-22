@@ -172,7 +172,7 @@ export function SystemCleanerView() {
               <ShieldCheck className="w-5 h-5" /> Ready to Scan
             </CardTitle>
             <CardDescription>
-              The System Cleaner securely removes leftover temporary files from Windows and your applications.
+              The System Cleaner securely removes leftover temporary files from your system and applications.
               Click <strong>Scan System</strong> to begin.
             </CardDescription>
           </CardHeader>
