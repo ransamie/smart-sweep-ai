@@ -70,7 +70,7 @@ export function PrivacyShieldView() {
         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           <Shield className="w-8 h-8 text-primary" /> Privacy Shield
         </h2>
-        <p className="text-muted-foreground mt-1">Premium feature: Clean your browser tracks, cache, and cookies.</p>
+        <p className="text-muted-foreground mt-1">Premium feature: Clean your browser cache and tracks to free up space.</p>
       </div>
 
       <Card>
@@ -121,10 +121,6 @@ export function PrivacyShieldView() {
                       <div className="flex justify-between">
                         <span>Cache:</span>
                         <span className="font-medium text-foreground">{(r.cacheSize / (1024 * 1024)).toFixed(2)} MB</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Cookies:</span>
-                        <span className="font-medium text-foreground">{(r.cookiesSize / (1024 * 1024)).toFixed(2)} MB</span>
                       </div>
                       <div className="flex justify-between border-t pt-1 mt-1">
                         <span>Total:</span>

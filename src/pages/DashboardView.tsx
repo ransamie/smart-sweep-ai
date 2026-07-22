@@ -35,13 +35,14 @@ export function DashboardView() {
         ]);
         
         let junkCount = 0;
-        if (sysJunk && !sysJunk.error && sysJunk.results) {
-          junkCount = sysJunk.results.reduce((acc: number, r: any) => acc + (r.files ? r.files.length : 0), 0);
+        if (sysJunk && !sysJunk.error) {
+          junkCount = (sysJunk as any[]).reduce((acc: number, r: any) => acc + (r.fileCount || 0), 0);
         }
         
         let privacyCount = 0;
         if (privData && !privData.error) {
-          privacyCount = privData.reduce((acc: number, b: any) => acc + (b.items ? b.items.length : 0), 0);
+          // Count each browser with tracks/cache as 1 risk
+          privacyCount = (privData as any[]).filter(b => b.totalSize > 0).length;
         }
         
         setSmartMetrics({ junk: junkCount, privacy: privacyCount });
@@ -110,8 +111,8 @@ export function DashboardView() {
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground mt-1">Overview of your system health and storage.</p>
         </div>
-        <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} variant="outline" className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${loadingAI ? 'animate-spin' : ''}`} /> Refresh
+        <Button onClick={() => runSmartScan(false)} disabled={smartScanning || !diskSpace} variant="outline" className="gap-2">
+          <RefreshCw className={`w-4 h-4 ${smartScanning ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
 
@@ -194,10 +195,19 @@ export function DashboardView() {
 
         <Card className="flex-1 w-full min-w-[320px] max-w-full border-primary/20 bg-primary/5 flex flex-col max-h-[calc(100vh-220px)] min-h-[480px]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <Sparkles className="w-5 h-5" /> AI System Summary
-            </CardTitle>
-            <CardDescription>Personalized recommendations based on your system state.</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Sparkles className="w-5 h-5" /> AI System Summary
+                </CardTitle>
+                <CardDescription>Personalized recommendations based on your system state.</CardDescription>
+              </div>
+              {aiSummary && (
+                <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0">
+                  <RefreshCw className={`w-4 h-4 ${loadingAI ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto pr-2">
             {aiSummary ? (

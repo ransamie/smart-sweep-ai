@@ -22,11 +22,11 @@ export function SettingsView() {
           <CardTitle className="flex items-center gap-2">
             <Key className="w-5 h-5 text-primary" /> API Configuration
           </CardTitle>
-          <CardDescription>Configure your connection to the OpenAI API.</CardDescription>
+          <CardDescription>Configure your connection to the Gemini API.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">OpenAI API Key</label>
+            <label className="text-sm font-medium">Gemini API Key</label>
             <div className="flex gap-4">
               <Input 
                 type="password" 
