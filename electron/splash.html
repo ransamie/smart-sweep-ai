@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SmartSweep AI</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 800px; height: 450px;
+      overflow: hidden;
+      font-family: 'Segoe UI', -apple-system, system-ui, sans-serif;
+      background: #0a0a12;
+      color: white;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+    body.fade-out { opacity: 0 !important; transition: opacity 0.32s ease; }
+
+    .bg-base {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 60% at 18% 55%, rgba(109,40,217,.18) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 50% at 82% 18%, rgba(59,130,246,.12) 0%, transparent 55%),
+        linear-gradient(145deg, #0a0a12 0%, #110a1e 55%, #0a0a12 100%);
+    }
+    .dot-grid {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+    .glow-1 {
+      position: absolute; width: 340px; height: 340px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(109,40,217,.22) 0%, transparent 70%);
+      top: -120px; left: -90px;
+      animation: blob1 6s ease-in-out infinite;
+    }
+    .glow-2 {
+      position: absolute; width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,.15) 0%, transparent 70%);
+      bottom: -80px; left: 160px;
+      animation: blob2 8s ease-in-out infinite;
+    }
+    @keyframes blob1 { 0%,100%{transform:scale(1) translate(0,0)} 50%{transform:scale(1.12) translate(12px,8px)} }
+    @keyframes blob2 { 0%,100%{transform:scale(1) translate(0,0)} 50%{transform:scale(1.08) translate(-8px,-12px)} }
+
+    /* Right-side illustration */
+    .illustration {
+      position: absolute; right: -20px; top: 0; bottom: 0; width: 420px;
+      background-size: cover; background-position: center;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 30%, rgba(0,0,0,.85) 100%);
+      mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.55) 30%, rgba(0,0,0,.85) 100%);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .illustration.visible { opacity: 0.35; }
+
+    .content {
+      position: relative; z-index: 10;
+      display: flex; flex-direction: column;
+      height: 100%; padding: 34px 46px 30px; max-width: 510px;
+      animation: fadeSlideIn 0.5s ease forwards;
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-ring {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, rgba(109,40,217,.25), rgba(59,130,246,.2));
+      border: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 12px rgba(109,40,217,.25);
+      overflow: hidden;
+    }
+    .logo-ring img { width: 22px; height: 22px; object-fit: contain; }
+    .app-name { font-size: 14px; font-weight: 600; letter-spacing: .025em; color: rgba(255,255,255,.88); }
+    .version-badge {
+      margin-left: 6px; font-size: 10px; font-weight: 500;
+      color: rgba(255,255,255,.3); background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.07); border-radius: 4px; padding: 1px 6px;
+    }
+
+    .divider {
+      display: flex; align-items: center; gap: 10px; margin: 22px 0 0;
+    }
+    .divider-line { height: 1px; flex: 1; background: linear-gradient(to right, rgba(255,255,255,.06), transparent); }
+    .divider-gem {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      box-shadow: 0 0 8px rgba(124,58,237,.7); flex-shrink: 0;
+    }
+
+    .tip {
+      flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 4px;
+      position: relative;
+    }
+    .tip-eyebrow { display: flex; align-items: center; gap: 7px; margin-bottom: 11px; }
+    .tip-dot { width: 5px; height: 5px; border-radius: 50%; background: #7c3aed; box-shadow: 0 0 6px rgba(124,58,237,.8); }
+    .tip-label-text { font-size: 9.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #8b5cf6; }
+    
+    .tip-title { font-size: 21px; font-weight: 700; line-height: 1.28; letter-spacing: -.015em; color: white; margin-bottom: 11px; }
+    .tip-title .accent {
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .tip-body { font-size: 13px; font-weight: 400; line-height: 1.7; color: rgba(255,255,255,.48); max-width: 390px; }
+
+    .progress-section {
+      margin-top: 26px;
+    }
+    .progress-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+    .progress-status { font-size: 11px; font-weight: 400; color: rgba(255,255,255,.35); transition: color .3s; }
+    .progress-pct { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.35); font-variant-numeric: tabular-nums; transition: color .3s; }
+    .progress-track { width: 100%; height: 2.5px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #7c3aed 0%, #3b82f6 55%, #06b6d4 100%);
+      border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); position: relative;
+    }
+    .progress-fill::after {
+      content: ''; position: absolute; top: -1.5px; right: -4px;
+      width: 12px; height: 5.5px; border-radius: 50%;
+      background: rgba(255,255,255,.75); filter: blur(3px);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-base"></div>
+  <div class="dot-grid"></div>
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+  <div class="illustration" id="illustration"></div>
+
+  <div class="content">
+    <div class="header">
+      <div class="logo-ring">
+        <img src="" id="logo-img" alt="logo" onerror="this.parentElement.textContent='⚡'" />
+      </div>
+      <span class="app-name">SmartSweep AI</span>
+      <span class="version-badge">v1.0.0</span>
+    </div>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-gem"></div>
+    </div>
+    <div class="tip">
+      <div class="tip-eyebrow">
+        <div class="tip-dot"></div>
+        <span class="tip-label-text">Pro Tip</span>
+      </div>
+      <div class="tip-content" id="tip-content">
+        <div class="tip-title" id="tip-title"></div>
+        <div class="tip-body"  id="tip-body"></div>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-meta">
+        <span class="progress-status" id="progress-status">Initializing&hellip;</span>
+        <span class="progress-pct"    id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ══ Tips data ══ */
+    var tips = [
+      { title: 'Keep It Consistently Clean',  accent: 'Clean',
+        body: 'Clearing your Temp folder monthly can silently free up several GBs of hidden clutter that accumulates invisibly in the background.',
+        img: 'splash-1.png' },
+      { title: 'Ghost Files Are Real',         accent: 'Ghost Files',
+        body: 'Uninstalled apps leave behind registry keys and AppData folders. App Debris tracks them down and removes them safely.',
+        img: 'splash-2.png' },
+      { title: 'Watch Your Downloads',         accent: 'Downloads',
+        body: 'Your Downloads folder is the #1 source of wasted disk space on most PCs. A monthly review keeps it under control.',
+        img: 'splash-3.png' },
+      { title: 'AI-Safe by Design',            accent: 'AI-Safe',
+        body: 'SmartSweep\'s AI ensures only genuinely redundant files are ever flagged. Critical system files are never touched.',
+        img: 'splash-4.png' },
+      { title: 'Clean Systems Last Longer',    accent: 'Last Longer',
+        body: 'A regularly optimized system runs cooler, boots up to 40% faster, and puts less stress on your hardware over time.',
+        img: 'splash-5.png' }
+    ];
+
+    var currentTip = Math.floor(Math.random() * tips.length);
+    var tipContentEl = document.getElementById('tip-content');
+    var titleEl = document.getElementById('tip-title');
+    var bodyEl = document.getElementById('tip-body');
+    var illusEl = document.getElementById('illustration');
+
+    /* Resolve paths for images */
+    var base = '';
+    try {
+      var nodePath = require('path');
+      var publicDir = nodePath.join(__dirname, '..', 'public').replace(/\\/g, '/');
+      base = 'file:///' + publicDir + '/';
+    } catch(e) {
+      /* fallback — won't show images but won't crash */
+      base = '';
+    }
+
+    /* Set logo */
+    try {
+      var logoEl = document.getElementById('logo-img');
+      if (logoEl && base) logoEl.src = base + 'logo.png';
+    } catch(e) {}
+
+    /* Show a tip */
+    function showTip(index) {
+      var t = tips[index];
+      titleEl.innerHTML = t.title.replace(t.accent, '<span class="accent">' + t.accent + '</span>');
+      bodyEl.textContent = t.body;
+      
+      /* Update illustration */
+      if (illusEl && base && t.img) {
+        illusEl.style.backgroundImage = "url('" + base + t.img + "')";
+        /* Small delay to let image start loading before fading in */
+        setTimeout(function() { illusEl.classList.add('visible'); }, 100);
+      }
+    }
+
+    /* Show random tip immediately */
+    showTip(currentTip);
+
+    /* ══ Progress bar helper ══ */
+    function setProgress(pct, label) {
+      var fill   = document.getElementById('progress-fill');
+      var pctEl  = document.getElementById('progress-pct');
+      var statEl = document.getElementById('progress-status');
+      if (fill)   fill.style.width = pct + '%';
+      if (pctEl)  pctEl.textContent = pct + '%';
+      if (statEl && label) statEl.textContent = label;
+      if (pct >= 90) {
+        if (pctEl)  pctEl.style.color  = 'rgba(167,139,250,.8)';
+        if (statEl) statEl.style.color = 'rgba(167,139,250,.8)';
+      }
+    }
+
+    /* ══ IPC wiring ══ */
+    try {
+      var ipcRenderer = require('electron').ipcRenderer;
+
+      ipcRenderer.on('splash-progress', function(e, data) {
+        setProgress(data.percent, data.label);
+      });
+
+      ipcRenderer.on('splash-close', function() {
+        setProgress(100, 'Ready!');
+        setTimeout(function() {
+          document.body.classList.add('fade-out');
+          setTimeout(function() { ipcRenderer.send('splash-done'); }, 340);
+        }, 300);
+      });
+    } catch(e) {
+      console.warn('IPC wiring failed:', e.message);
+      setTimeout(function() {
+        document.body.classList.add('fade-out');
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

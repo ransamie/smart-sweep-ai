@@ -1,0 +1,24 @@
+appId: com.smartsweep.ai
+productName: SmartSweep AI
+directories:
+  output: dist
+  buildResources: build
+files:
+  - dist-electron/**/*
+  - dist-react/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: msi
+      arch:
+        - x64
+  requestedExecutionLevel: requireAdministrator
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: true
+msi:
+  oneClick: false
+  perMachine: true

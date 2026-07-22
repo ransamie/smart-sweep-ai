@@ -1,0 +1,45 @@
+{
+  "name": "smart-sweep-ai",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "copy-splash": "node -e \"require('fs').mkdirSync('dist-electron',{recursive:true});require('fs').copyFileSync('electron/splash.html','dist-electron/splash.html')\"",
+    "dev": "npm run copy-splash && concurrently \"vite\" \"tsc -p electron/tsconfig.json -w\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
+    "build": "tsc -b && tsc -p electron/tsconfig.json && vite build && npm run copy-splash",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^0.370.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-is": "^19.2.7",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.22.3",
+    "recharts": "^3.9.2",
+    "registry-js": "^1.15.0",
+    "tailwind-merge": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3",
+    "oxlint": "^1.71.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "~5.4.2",
+    "vite": "^5.2.0",
+    "wait-on": "^7.2.0"
+  }
+}
