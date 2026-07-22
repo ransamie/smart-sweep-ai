@@ -44,14 +44,20 @@ export function PrivacyShieldView() {
     }
   };
 
+  const [lockedWarning, setLockedWarning] = useState<string | null>(null);
+
   const handleClean = async () => {
     setCleaning(true);
+    setLockedWarning(null);
     try {
       if (window.electronAPI) {
         const browsersToClean = Object.keys(options).filter(k => options[k as keyof typeof options]);
         // @ts-ignore
-        await window.electronAPI.cleanBrowserPrivacy(browsersToClean);
-        handleScan();
+        const res = await window.electronAPI.cleanBrowserPrivacy(browsersToClean);
+        if (res && res.totalFailed > 0) {
+          setLockedWarning("⚠️ Notice: Some cache files could not be cleared because your web browser (Chrome, Edge, or Firefox) is currently open. Please close your web browser and click 'Clean Selected' again.");
+        }
+        await handleScan();
       }
     } catch (e) {
       console.error(e);
@@ -102,6 +108,12 @@ export function PrivacyShieldView() {
               {cleaning ? 'Clean Selected' : 'Clean Selected'}
             </Button>
           </div>
+
+          {lockedWarning && (
+            <div className="mt-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs leading-relaxed">
+              {lockedWarning}
+            </div>
+          )}
 
           {results && (
             <div className="mt-8 space-y-4">

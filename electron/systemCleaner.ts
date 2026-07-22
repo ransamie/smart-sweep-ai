@@ -194,32 +194,47 @@ export async function scanSystemJunk(): Promise<CleanerResult[]> {
 }
 
 // Helper to safely delete contents of a directory without deleting the directory itself
-async function deleteDirContents(dirPath: string): Promise<void> {
+async function deleteDirContents(dirPath: string): Promise<{ deleted: number; failed: number }> {
+  let deleted = 0;
+  let failed = 0;
   try {
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
       try {
+        await fs.chmod(fullPath, 0o666).catch(() => {});
         if (entry.isDirectory()) {
-          await fs.rm(fullPath, { recursive: true, force: true });
+          await fs.rm(fullPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 });
         } else {
           await fs.unlink(fullPath);
         }
+        deleted++;
       } catch (e) {
-        // Skip locked files (e.g. files currently in use)
+        try {
+          await fs.rm(fullPath, { recursive: true, force: true });
+          deleted++;
+        } catch (err) {
+          failed++;
+        }
       }
     }
   } catch (e) {
     // Ignore if directory doesn't exist or is unreadable
   }
+  return { deleted, failed };
 }
 
-export async function cleanSystemJunk(categoryIds: string[]): Promise<void> {
+export async function cleanSystemJunk(categoryIds: string[]): Promise<{ totalDeleted: number; totalFailed: number }> {
   const selectedCats = SYSTEM_CATEGORIES.filter(c => categoryIds.includes(c.id));
-  
+  let totalDeleted = 0;
+  let totalFailed = 0;
+
   for (const cat of selectedCats) {
     for (const targetPath of cat.paths) {
-      await deleteDirContents(targetPath);
+      const res = await deleteDirContents(targetPath);
+      totalDeleted += res.deleted;
+      totalFailed += res.failed;
     }
   }
+  return { totalDeleted, totalFailed };
 }

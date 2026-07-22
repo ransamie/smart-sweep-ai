@@ -84,21 +84,26 @@ export function SystemCleanerView() {
     }
   };
 
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
+
   const runClean = async () => {
     if (selected.size === 0) return;
     setCleaning(true);
+    setLockedNotice(null);
     
     try {
       // @ts-ignore
       if (window.electronAPI) {
         // @ts-ignore
         const res = await window.electronAPI.cleanSystemJunk(Array.from(selected));
-        if (res.error) {
+        if (res?.error) {
           setError(res.error);
         } else {
           setCleaned(true);
-          setSelected(new Set());
-          setCategories([]); // Clear list as it's been cleaned
+          if (res && res.totalFailed > 0) {
+            setLockedNotice(`Notice: System files cleaned! Note: ${res.totalFailed} temporary files are currently locked by active background applications and were safely skipped.`);
+          }
+          await runScan();
         }
       }
     } catch (e: any) {
@@ -203,6 +208,12 @@ export function SystemCleanerView() {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
         </Card>
+      )}
+
+      {lockedNotice && (
+        <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs leading-relaxed">
+          {lockedNotice}
+        </div>
       )}
 
       {cleaned && (

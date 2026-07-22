@@ -175,15 +175,29 @@ export function DashboardView() {
                         </div>
                         <div className="flex items-center justify-between py-1 border-b border-border/40 gap-2">
                           <span className="text-muted-foreground whitespace-nowrap">Privacy Risks</span>
-                          <span className={smartMetrics ? (smartMetrics.privacy > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
-                            {smartMetrics ? `${smartMetrics.privacy} risks` : 'Not Scanned'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={smartMetrics ? (smartMetrics.privacy > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
+                              {smartMetrics ? `${smartMetrics.privacy} risks` : 'Not Scanned'}
+                            </span>
+                            {smartMetrics && smartMetrics.privacy > 0 && (
+                              <button onClick={() => navigate('/privacy')} className="text-[10px] bg-red-500/20 text-red-400 hover:bg-red-500/30 px-1.5 py-0.5 rounded font-medium transition-colors">
+                                Fix →
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center justify-between py-1 gap-2">
                           <span className="text-muted-foreground whitespace-nowrap">Junk Files</span>
-                          <span className={smartMetrics ? (smartMetrics.junk > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
-                            {smartMetrics ? `${smartMetrics.junk} files` : 'Not Scanned'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={smartMetrics ? (smartMetrics.junk > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
+                              {smartMetrics ? `${smartMetrics.junk} files` : 'Not Scanned'}
+                            </span>
+                            {smartMetrics && smartMetrics.junk > 0 && (
+                              <button onClick={() => navigate('/system-cleaner')} className="text-[10px] bg-red-500/20 text-red-400 hover:bg-red-500/30 px-1.5 py-0.5 rounded font-medium transition-colors">
+                                Clean →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -268,7 +282,7 @@ export function DashboardView() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/cleaner')}>
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/system-cleaner')}>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-blue-500/10 text-blue-500"><Trash2 className="w-5 h-5" /></div>
                 <div>
