@@ -95,6 +95,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       localStorage.removeItem('gemini_api_key');
     }
+    // Clear old AI cached summary and advice whenever API key changes
+    setDashboardSummary(null);
+    setStartupAnalysis(null);
+    setDeepScanExplanation(null);
+    // @ts-ignore
+    if (window.electronAPI?.clearAiCache) {
+      // @ts-ignore
+      window.electronAPI.clearAiCache();
+    }
   }, [apiKey]);
 
   useEffect(() => {

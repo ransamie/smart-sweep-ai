@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getOrphanedData: () => ipcRenderer.invoke('get-orphaned-data'),
   getDrives: () => ipcRenderer.invoke('get-drives'),
   validateApiKey: (apiKey: string) => ipcRenderer.invoke('validate-api-key', apiKey),
+  clearAiCache: () => ipcRenderer.invoke('clear-ai-cache'),
   explainPath: (apiKey: string, targetPath: string) => ipcRenderer.invoke('explain-path', apiKey, targetPath),
   scanSystemJunk: () => ipcRenderer.invoke('scan-system-junk'),
   cleanSystemJunk: (categoryIds: string[]) => ipcRenderer.invoke('clean-system-junk', categoryIds),

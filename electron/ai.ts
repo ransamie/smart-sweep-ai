@@ -70,13 +70,17 @@ async function callGeminiApi(apiKey: string, prompt: string, cacheKey?: string):
   }
 }
 
+export function clearAiCache(): void {
+  aiCache.clear();
+}
+
 export async function generateCleanupAdvice(apiKey: string, scanSummary: any): Promise<string> {
   const prompt = `You are a helpful IT assistant. I have scanned my current system. Here is a summary of my storage:
 ${JSON.stringify(scanSummary, null, 2)}
 
 Provide concise, plain-English advice on what I can safely delete. If top files are listed, specifically mention which of those exact files might be taking up the most space and whether they seem safe to remove (e.g. installers, temp files).`;
 
-  const cacheKey = `cleanup_${JSON.stringify(scanSummary)}`;
+  const cacheKey = `${apiKey}_cleanup_${JSON.stringify(scanSummary)}`;
   return callGeminiApi(apiKey, prompt, cacheKey);
 }
 
@@ -86,7 +90,7 @@ export async function explainPath(apiKey: string, targetPath: string): Promise<s
 
 Provide a concise, plain-English explanation (2-3 sentences) of what this folder typically contains, what application it belongs to (if known), and whether it is generally safe to delete its contents to free up space. Format your response in markdown.`;
 
-  const cacheKey = `explain_${targetPath}`;
+  const cacheKey = `${apiKey}_explain_${targetPath}`;
   return callGeminiApi(apiKey, prompt, cacheKey);
 }
 
@@ -96,6 +100,6 @@ ${JSON.stringify(items, null, 2)}
 
 Provide a concise, plain-English recommendation on which items I should safely disable to improve my boot times.`;
 
-  const cacheKey = `startup_${JSON.stringify(items.map(i => ({ name: i.name, enabled: i.enabled })))}`;
+  const cacheKey = `${apiKey}_startup_${JSON.stringify(items.map(i => ({ name: i.name, enabled: i.enabled })))}`;
   return callGeminiApi(apiKey, prompt, cacheKey);
 }

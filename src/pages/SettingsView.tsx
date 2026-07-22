@@ -8,7 +8,13 @@ import { DriveSelector } from '@/components/DriveSelector';
 
 export function SettingsView() {
   const { apiKey, setApiKey, automationSettings, setAutomationSettings } = useAppContext();
-  const [localKey, setLocalKey] = useState(apiKey || '');
+  const [savedNotice, setSavedNotice] = useState(false);
+
+  const handleSaveKey = () => {
+    setApiKey(localKey);
+    setSavedNotice(true);
+    setTimeout(() => setSavedNotice(false), 4000);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -27,14 +33,15 @@ export function SettingsView() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Gemini API Key</label>
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-center">
               <Input 
                 type="password" 
                 value={localKey} 
                 onChange={(e) => setLocalKey(e.target.value)} 
                 className="max-w-md font-mono"
               />
-              <Button onClick={() => setApiKey(localKey)}>Save Key</Button>
+              <Button onClick={handleSaveKey}>Save Key</Button>
+              {savedNotice && <span className="text-xs text-green-400 font-medium animate-in fade-in">✓ Key saved & AI cache reset!</span>}
             </div>
             <p className="text-xs text-muted-foreground">Used exclusively for generating cleanup advice.</p>
           </div>

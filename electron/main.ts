@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { statfs, readdir } from 'fs/promises';
 import { scanDirectory, getFileSummary, deleteFiles, restoreFile } from './scanner.js';
 import { getInstalledApps } from './registry.js';
-import { generateCleanupAdvice, validateApiKey, analyzeStartup, explainPath } from './ai.js';
+import { generateCleanupAdvice, validateApiKey, analyzeStartup, explainPath, clearAiCache } from './ai.js';
 import { scanBrowserPrivacy, cleanBrowserPrivacy } from './browser.js';
 import { getStartupItems, toggleStartupItem } from './startup.js';
 import { scanSystemJunk, cleanSystemJunk, SYSTEM_CATEGORIES } from './systemCleaner.js';
@@ -448,6 +448,11 @@ ipcMain.handle('get-ai-recommendation', async (event, apiKey, scanData) => {
     console.error('AI error:', error);
     return { error: error.message };
   }
+});
+
+ipcMain.handle('clear-ai-cache', () => {
+  clearAiCache();
+  return { success: true };
 });
 
 ipcMain.handle('validate-api-key', async (event, apiKey) => {
