@@ -1,14 +1,27 @@
-import React from 'react';
-import { HardDrive, CheckCircle2, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { HardDrive, Check, ChevronDown } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { cn } from '@/lib/utils';
 
 export function DriveSelector() {
   const { availableDrives, selectedDrive, setSelectedDrive } = useAppContext();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!availableDrives || availableDrives.length === 0) {
     return (
-      <div className="flex items-center gap-3 text-sm text-muted-foreground border border-white/10 rounded-xl p-4 bg-muted/10 w-full max-w-2xl">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground border border-white/10 rounded-xl px-4 py-3.5 bg-muted/10 w-full max-w-xl">
         <HardDrive className="w-5 h-5 animate-pulse text-primary" />
         <span>Detecting local storage drives…</span>
       </div>
@@ -19,85 +32,76 @@ export function DriveSelector() {
     return (bytes / 1073741824).toFixed(1) + ' GB';
   };
 
-  return (
-    <div className="space-y-4 w-full max-w-2xl">
-      {/* Interactive Drive Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {availableDrives.map(drive => {
-          const isSelected = drive.root === selectedDrive;
-          const usedPct = Math.min(100, Math.max(0, (drive.used / drive.total) * 100));
+  const currentDrive = availableDrives.find(d => d.root === selectedDrive) || availableDrives[0];
 
-          return (
-            <div
-              key={drive.letter}
-              onClick={() => setSelectedDrive(drive.root)}
-              className={cn(
-                "group relative p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-3",
-                isSelected 
-                  ? "bg-primary/10 border-primary/60 ring-1 ring-primary/40 shadow-lg shadow-primary/10" 
-                  : "bg-muted/10 border-white/10 hover:bg-muted/20 hover:border-white/20"
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "p-2.5 rounded-lg transition-colors",
-                    isSelected ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground group-hover:text-foreground"
-                  )}>
-                    <HardDrive className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm text-foreground flex items-center gap-2">
+  return (
+    <div className="relative w-full max-w-xl" ref={containerRef}>
+      {/* Custom Dropdown Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all text-left bg-card/90 hover:bg-card cursor-pointer shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50",
+          isOpen ? "border-primary ring-2 ring-primary/30" : "border-white/15 hover:border-white/30"
+        )}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+            <HardDrive className="w-5 h-5" />
+          </div>
+          <div className="truncate">
+            <span className="font-semibold text-sm text-foreground block">
+              {currentDrive.label}
+            </span>
+            <span className="text-xs text-muted-foreground font-mono">
+              {formatSize(currentDrive.free)} free / {formatSize(currentDrive.total)} total
+            </span>
+          </div>
+        </div>
+
+        <ChevronDown className={cn("w-5 h-5 text-muted-foreground shrink-0 transition-transform duration-200", isOpen && "rotate-180 text-primary")} />
+      </button>
+
+      {/* Spacious Custom Dropdown Options Menu */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-[#12121A] border border-primary/30 shadow-2xl backdrop-blur-xl overflow-hidden py-1.5 animate-in fade-in zoom-in-95 duration-150">
+          {availableDrives.map((drive) => {
+            const isSelected = drive.root === selectedDrive;
+
+            return (
+              <div
+                key={drive.letter}
+                onClick={() => {
+                  setSelectedDrive(drive.root);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors border-b last:border-b-0 border-white/5 min-h-[54px]",
+                  isSelected
+                    ? "bg-primary/20 text-white font-medium"
+                    : "hover:bg-primary/10 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <HardDrive className={cn("w-5 h-5 shrink-0", isSelected ? "text-primary" : "text-muted-foreground")} />
+                  <div className="truncate">
+                    <span className="font-semibold text-sm block text-foreground">
                       {drive.label}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
-                      {formatSize(drive.free)} free of {formatSize(drive.total)}
-                    </div>
+                    </span>
+                    <span className="text-xs font-mono opacity-80">
+                      {formatSize(drive.free)} free / {formatSize(drive.total)} total
+                    </span>
                   </div>
                 </div>
 
                 {isSelected && (
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0 animate-in zoom-in-50 duration-200" />
+                  <Check className="w-5 h-5 text-primary shrink-0 ml-2" />
                 )}
               </div>
-
-              {/* Drive Storage Progress Bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
-                  <span>Used: {formatSize(drive.used)}</span>
-                  <span>{usedPct.toFixed(0)}%</span>
-                </div>
-                <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
-                  <div 
-                    className={cn(
-                      "h-full transition-all duration-500 rounded-full",
-                      usedPct > 90 ? "bg-red-500" : usedPct > 75 ? "bg-amber-500" : "bg-primary"
-                    )}
-                    style={{ width: `${usedPct}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Styled Long Dropdown for quick access */}
-      <div className="relative w-full">
-        <select
-          value={selectedDrive}
-          onChange={(e) => setSelectedDrive(e.target.value)}
-          className="w-full bg-muted/20 border border-white/10 text-foreground rounded-xl pl-11 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none cursor-pointer font-medium hover:bg-muted/30 transition-colors"
-        >
-          {availableDrives.map(drive => (
-            <option key={drive.letter} value={drive.root} className="bg-[#12121A] text-foreground">
-              {drive.label} — {formatSize(drive.free)} free / {formatSize(drive.total)} total
-            </option>
-          ))}
-        </select>
-        <HardDrive className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
-        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
