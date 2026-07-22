@@ -154,30 +154,35 @@ h1, h2, h3 {
   padding: 6rem 0;
 }
 
-/* App Mockup Tilt Effect */
+/* App Mockup Presentation */
 .mockup-container {
-  perspective: 1000px;
-  margin-top: 4rem;
+  margin-top: 3.5rem;
+  width: 100%;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .mockup-frame {
   background: var(--bg-color);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 100px rgba(139, 92, 246, 0.15);
-  transform: rotateX(15deg) rotateY(-5deg) rotateZ(2deg);
-  transition: transform 0.5s ease;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 100px rgba(139, 92, 246, 0.2);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .mockup-container:hover .mockup-frame {
-  transform: rotateX(5deg) rotateY(0deg) rotateZ(0deg);
+  transform: translateY(-6px);
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 120px rgba(139, 92, 246, 0.3);
 }
 
 .mockup-img {
   width: 100%;
   height: auto;
   display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 /* Navigation */

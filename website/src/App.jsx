@@ -77,13 +77,7 @@ function App() {
 
             <div className="mockup-container">
               <div className="mockup-frame">
-                {/* We'll use a placeholder for the mockup until they upload an actual screenshot */}
-                <div style={{ padding: '1rem', background: '#111', borderBottom: '1px solid #333', display: 'flex', gap: '0.5rem' }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FF5F56' }}></div>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FFBD2E' }}></div>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#27C93F' }}></div>
-                </div>
-                <img src="/dashboard-mockup.png" alt="SmartSweep AI Dashboard" className="mockup-img" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '0 0 12px 12px' }} onError={(e) => {
+                <img src="/dashboard-mockup.png" alt="SmartSweep AI Dashboard" className="mockup-img" onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';
                 }}/>
