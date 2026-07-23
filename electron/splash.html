@@ -143,7 +143,7 @@
         <img src="" id="logo-img" alt="logo" onerror="this.parentElement.textContent='⚡'" />
       </div>
       <span class="app-name">SmartSweep AI</span>
-      <span class="version-badge">v1.0.0</span>
+      <span class="version-badge">v1.0.3</span>
     </div>
     <div class="divider">
       <div class="divider-line"></div>
@@ -211,6 +211,14 @@
     try {
       var logoEl = document.getElementById('logo-img');
       if (logoEl && base) logoEl.src = base + 'logo.png';
+      
+      /* Set dynamic version */
+      var pkgPath = nodePath.join(__dirname, '..', 'package.json');
+      var pkg = require(pkgPath);
+      var badge = document.querySelector('.version-badge');
+      if (badge && pkg && pkg.version) {
+        badge.textContent = 'v' + pkg.version;
+      }
     } catch(e) {}
 
     /* Show a tip */
