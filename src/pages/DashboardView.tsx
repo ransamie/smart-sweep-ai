@@ -70,11 +70,6 @@ export function DashboardView() {
     try {
       // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
-        if (window.electronAPI.clearAiCache) {
-          // @ts-ignore
-          await window.electronAPI.clearAiCache();
-        }
         const topFiles = deepScanResults
           ? [...deepScanResults]
               .sort((a, b) => b.size - a.size)
