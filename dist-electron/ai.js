@@ -69,9 +69,9 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
         }
     }
     // List of models to try in order
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
     let lastErrorMsg = '';
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
         // Wait for rate limit slot
         await rateLimiter.waitForSlot();
         const modelName = models[attempt % models.length];
