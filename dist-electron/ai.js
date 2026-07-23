@@ -69,9 +69,9 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
         }
     }
     // List of models to try in order
-    const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
+    const models = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let lastErrorMsg = '';
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < models.length; attempt++) {
         // Wait for rate limit slot
         await rateLimiter.waitForSlot();
         const modelName = models[attempt % models.length];
@@ -115,8 +115,8 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
         }
         catch (error) {
             console.error(`AI API Attempt ${attempt + 1} Error:`, error);
-            lastErrorMsg = error.message;
-            if (attempt < 2) {
+            lastErrorMsg = error?.message || String(error) || 'Unknown network error';
+            if (attempt < models.length - 1) {
                 await new Promise(res => setTimeout(res, 4000));
             }
         }
@@ -124,7 +124,7 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
     if (lastErrorMsg.toLowerCase().includes('429') || lastErrorMsg.toLowerCase().includes('quota') || lastErrorMsg.toLowerCase().includes('resource_exhausted')) {
         throw new Error("⚠️ AI Rate Limit Reached: Your Gemini API key quota was reached. Please wait a minute or use a new key in Settings.");
     }
-    throw new Error(lastErrorMsg || 'Failed to communicate with AI service.');
+    throw new Error(lastErrorMsg && lastErrorMsg.trim() !== '' ? lastErrorMsg : 'Failed to communicate with AI service. Check your internet or API key.');
 }
 export function clearAiCache() {
     diskCache = {};
