@@ -2,6 +2,9 @@
   "name": "smart-sweep-ai",
   "private": true,
   "version": "1.0.0",
+  "description": "Smart Sweep AI - System Optimization",
+  "author": "Ransom",
+  "repository": "https://github.com/ransamie/smart-sweep-ai",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
