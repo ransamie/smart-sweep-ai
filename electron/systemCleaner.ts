@@ -156,12 +156,19 @@ async function getDirStats(dirPath: string): Promise<{ size: number, count: numb
           size += sub.size;
           count += sub.count;
         } else {
-          const stats = await fs.stat(fullPath);
-          size += stats.size;
-          count += 1;
+          try {
+            // Try to open with write access to see if the file is locked or un-deletable
+            const fd = await fs.open(fullPath, 'r+');
+            await fd.close();
+            const stats = await fs.stat(fullPath);
+            size += stats.size;
+            count += 1;
+          } catch (e) {
+            // File is locked (EBUSY) or we don't have permission (EPERM), so we skip counting it
+          }
         }
       } catch (e) {
-        // Skip locked/unreadable files
+        // Skip inaccessible entries
       }
     }
   } catch (e) {
