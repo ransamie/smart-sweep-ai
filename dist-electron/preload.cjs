@@ -30,5 +30,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updateSettings: (settings) => ipcRenderer.invoke('update-settings', settings),
     onNavigate: (callback) => {
         ipcRenderer.on('navigate-to', (_event, route) => callback(route));
-    }
+    },
+    platform: process.platform
 });

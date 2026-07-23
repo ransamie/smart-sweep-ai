@@ -72,7 +72,7 @@ export function OnboardingView() {
         >
           <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
             <div className="bg-gradient-to-br from-primary/20 to-blue-600/20 p-2.5 rounded-xl shadow-lg shadow-primary/10 ring-1 ring-white/5">
-              <img src="/logo.png" alt="SmartSweep Logo" className="w-8 h-8 object-contain" />
+              <img src="./logo.png" alt="SmartSweep Logo" className="w-8 h-8 object-contain" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">SmartSweep AI</h1>
           </motion.div>

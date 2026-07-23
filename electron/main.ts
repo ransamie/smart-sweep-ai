@@ -124,10 +124,15 @@ function createWindow() {
     height: 768,
     minWidth: 800,
     minHeight: 600,
-    frame: false, // Frameless window to remove native OS titlebar ribbon
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#0d0d12',
+      symbolColor: '#a1a1aa',
+      height: 38
+    },
     show: false,  // hidden until splash finishes
     opacity: 0,
-    icon: path.join(__dirname, '../build/icon.png'),
+    icon: path.join(__dirname, '../build/icon.ico'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -206,8 +211,8 @@ function revealMainWindow() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, '../build/icon.png');
-  const icon = nativeImage.createFromPath(iconPath);
+  const iconPath = path.join(__dirname, '../build/icon.ico');
+  const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
   tray = new Tray(icon);
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Open SmartSweep', click: () => createWindow() },

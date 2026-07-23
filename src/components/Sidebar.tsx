@@ -30,7 +30,7 @@ export function Sidebar() {
     <div className="w-64 min-w-[256px] max-w-[256px] shrink-0 border-r border-white/5 bg-black/20 backdrop-blur-xl h-full flex flex-col">
       <div className="p-6">
         <h1 className="text-xl font-bold flex items-center gap-3">
-          <img src="/logo.png" alt="SmartSweep Logo" className="w-10 h-10 object-contain shrink-0 drop-shadow-md" />
+          <img src="./logo.png" alt="SmartSweep Logo" className="w-10 h-10 object-contain shrink-0 drop-shadow-md" />
           <span>SmartSweep AI</span>
         </h1>
       </div>
