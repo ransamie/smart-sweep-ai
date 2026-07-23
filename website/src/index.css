@@ -216,6 +216,19 @@ h1, h2, h3 {
   border-bottom-right-radius: 12px;
 }
 
+/* Shiny reflection over the screen */
+.mockup-glare {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(105deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+  z-index: 20;
+  border-radius: 12px;
+}
+
 /* Navigation */
 .navbar {
   position: fixed;

@@ -73,6 +73,7 @@ function App() {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';
                 }}/>
+                <div className="mockup-glare"></div>
                 <div style={{ display: 'none', width: '100%', height: '600px', background: '#0A0A0F', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
                   [ Dashboard Screenshot Placeholder ]
                 </div>

@@ -91,7 +91,9 @@ export function PrivacyShieldView() {
 
           if (res.openBrowsers && res.openBrowsers.length > 0) {
             const browserList = res.openBrowsers.join(', ');
-            setLockedWarning(`⚠️ Notice: ${browserList} is currently running in the background (even if you closed its window, Chrome/Edge background processes often remain active in the System Tray). Please right-click ${browserList} in the System Tray and Exit, then click 'Clean Selected' again.`);
+            const verb = res.openBrowsers.length > 1 ? 'are' : 'is';
+            const pronoun = res.openBrowsers.length > 1 ? 'their windows' : 'its window';
+            setLockedWarning(`⚠️ Notice: ${browserList} ${verb} currently running in the background. Even if you closed ${pronoun}, background processes often remain active. Please fully close them via the System Tray (near the clock) or Task Manager, then click 'Clean Selected' again.`);
           } else if (res.totalFailed > 0) {
             setLockedWarning(`⚠️ Notice: ${res.totalFailed} cache files were locked by active system processes and safely skipped.`);
           }
