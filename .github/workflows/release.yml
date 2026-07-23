@@ -25,8 +25,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install
+      - name: Set Visual C++ toolset for node-gyp (Windows)
+        if: matrix.os == 'windows-latest'
+        run: echo "npm_config_msvs_version=2022" >> $GITHUB_ENV
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm ci
+        shell: bash
+
+      - name: Install dependencies (non-Windows)
+        if: matrix.os != 'windows-latest'
+        run: npm ci
 
       - name: Build and Release Electron app
         env:
