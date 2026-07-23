@@ -83,7 +83,7 @@ async function callGeminiApi(apiKey: string, prompt: string, cacheKey?: string):
   }
 
   // List of models to try in order
-  const models = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const models = ['gemini-2.5-flash', 'gemini-2.5-pro'];
   let lastErrorMsg = '';
 
   for (let attempt = 0; attempt < models.length; attempt++) {
@@ -93,29 +93,32 @@ async function callGeminiApi(apiKey: string, prompt: string, cacheKey?: string):
     const modelName = models[attempt % models.length];
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        })
-      });
+      let response;
+      for (let retry = 0; retry < 3; retry++) {
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }]
+          })
+        });
 
-      if (response.status === 429) {
-        // Quota / Rate limit hit - sleep 8 seconds and retry automatically
-        console.warn(`Gemini 429 Rate Limit (Attempt ${attempt + 1}/3). Retrying in 8s...`);
-        await new Promise(res => setTimeout(res, 8000));
-        continue;
+        if (response.status === 429) {
+          console.warn(`Gemini 429 Rate Limit for ${modelName} (Retry ${retry + 1}/3). Retrying in 8s...`);
+          await new Promise(res => setTimeout(res, 8000));
+          continue;
+        }
+        break; // If not 429, break the retry loop and handle the response
       }
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        lastErrorMsg = err.error?.message || response.statusText || 'Failed to fetch AI response';
-        if (response.status === 404 || lastErrorMsg.toLowerCase().includes('not found') || lastErrorMsg.toLowerCase().includes('quota') || lastErrorMsg.toLowerCase().includes('resource_exhausted')) {
+      if (!response || !response.ok) {
+        const err = await response?.json().catch(() => ({})) || {};
+        lastErrorMsg = err.error?.message || response?.statusText || 'Failed to fetch AI response';
+        if (response?.status === 404 || lastErrorMsg.toLowerCase().includes('not found') || lastErrorMsg.toLowerCase().includes('quota') || lastErrorMsg.toLowerCase().includes('resource_exhausted')) {
           await new Promise(res => setTimeout(res, 2000));
           continue;
         }
