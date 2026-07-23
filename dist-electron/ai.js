@@ -69,9 +69,9 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
         }
     }
     // List of models to try in order
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    const models = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro'];
     let lastErrorMsg = '';
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 4; attempt++) {
         // Wait for rate limit slot
         await rateLimiter.waitForSlot();
         const modelName = models[attempt % models.length];
@@ -96,8 +96,8 @@ async function callGeminiApi(apiKey, prompt, cacheKey) {
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
                 lastErrorMsg = err.error?.message || response.statusText || 'Failed to fetch AI response';
-                if (lastErrorMsg.toLowerCase().includes('quota') || lastErrorMsg.toLowerCase().includes('resource_exhausted')) {
-                    await new Promise(res => setTimeout(res, 8000));
+                if (response.status === 404 || lastErrorMsg.toLowerCase().includes('not found') || lastErrorMsg.toLowerCase().includes('quota') || lastErrorMsg.toLowerCase().includes('resource_exhausted')) {
+                    await new Promise(res => setTimeout(res, 2000));
                     continue;
                 }
                 throw new Error(lastErrorMsg);
