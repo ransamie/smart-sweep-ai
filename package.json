@@ -1,9 +1,12 @@
 {
   "name": "smart-sweep-ai",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Smart Sweep AI - System Optimization",
-  "author": "Ransom <ransom@example.com>",
+  "author": {
+    "name": "Ran Technologies",
+    "email": "ransom@example.com"
+  },
   "repository": "https://github.com/ransamie/smart-sweep-ai",
   "type": "module",
   "main": "dist-electron/main.js",
@@ -39,10 +42,46 @@
     "electron": "^30.5.1",
     "electron-builder": "^24.13.3",
     "oxlint": "^1.71.0",
+    "png-to-ico": "^3.0.2",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "typescript": "~5.4.2",
     "vite": "^5.2.0",
     "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.rantechnologies.smartsweepai",
+    "productName": "SmartSweep AI",
+    "copyright": "Copyright © 2026 Ran Technologies",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "publisherName": "Ran Technologies"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "draft"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility"
+    }
   }
 }
