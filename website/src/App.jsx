@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, HardDrive, Sparkles, Download, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History } from 'lucide-react';
 import './index.css';
 
 
@@ -117,22 +117,22 @@ function App() {
               {/* Feature 3 */}
               <div className="bento-item bento-item-half glass-card">
                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#EF4444' }}>
-                  <HardDrive size={24} />
+                  <Trash2 size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Deep Space Analyzer</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>System Cleaner</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Visually drill down into your hard drive to find the exact large files hoarding your storage space, sorted automatically by size.
+                  Instantly reclaim gigabytes of hidden system cache, temporary files, and orphaned logs that are silently hoarding your valuable storage space.
                 </p>
               </div>
 
               {/* Feature 4 */}
               <div className="bento-item bento-item-half glass-card">
                 <div style={{ background: 'rgba(34, 197, 94, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#22C55E' }}>
-                  <Zap size={24} />
+                  <History size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Smart Sweep Automation</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Activity Logs & History</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Set it and forget it. SmartSweep AI can automatically clean your system at a scheduled time every day while you are away from your desk.
+                  Total transparency. Keep a detailed, exportable history of every single file deleted during optimization, ensuring you always know exactly what was removed.
                 </p>
               </div>
 

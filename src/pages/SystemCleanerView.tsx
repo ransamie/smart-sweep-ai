@@ -156,11 +156,8 @@ export function SystemCleanerView() {
 
   const toggleAll = () => {
     const visibleCategoryIds = categories
-      .filter(c => {
-        const r = results.find(res => res.categoryId === c.id);
-        return r && r.fileCount > 0;
-      })
-      .map(c => c.id);
+      .filter(c => c.result && c.result.fileCount > 0)
+      .map(c => c.category.id);
 
     const allVisibleSelected = visibleCategoryIds.every(id => selected.has(id));
 
@@ -365,8 +362,8 @@ export function SystemCleanerView() {
       {scanState === 'done' && hasJunk && !cleaned && (
         <SelectionFooter
           selectedCount={Array.from(selected).filter(id => {
-            const r = results.find(res => res.categoryId === id);
-            return r && r.fileCount > 0;
+            const c = categories.find(cat => cat.category.id === id);
+            return c && c.result.fileCount > 0;
           }).length}
           totalSize={getTotalSelectedSize()}
           onClean={runClean}
