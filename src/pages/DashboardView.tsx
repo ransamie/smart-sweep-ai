@@ -41,11 +41,22 @@ export function DashboardView() {
 
         let privacyCount = 0;
         if (Array.isArray(privData)) {
-          // Count each browser with tracks/cache as 1 risk
-          privacyCount = privData.filter((b: any) => b.totalSize > 0).length;
+          // Ignore sizes under 10MB as they are usually locked active system caches, not accumulated traces
+          privacyCount = privData.filter((b: any) => b.totalSize > 10 * 1024 * 1024).length;
         }
         
         setSmartMetrics({ junk: junkCount, privacy: privacyCount });
+
+        // @ts-ignore
+        if (window.electronAPI.addHistoryEntry) {
+          // @ts-ignore
+          await window.electronAPI.addHistoryEntry({
+            timestamp: Date.now(),
+            scanType: 'Smart Scan',
+            bytesCleaned: 0,
+            details: `Found ${junkCount} junk files and ${privacyCount} browser privacy risks.`
+          });
+        }
 
         // Send desktop notification
         // @ts-ignore

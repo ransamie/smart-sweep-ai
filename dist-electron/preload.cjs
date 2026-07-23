@@ -26,10 +26,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
     maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
     closeWindow: () => ipcRenderer.invoke('window-close'),
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     getSettings: () => ipcRenderer.invoke('get-settings'),
     updateSettings: (settings) => ipcRenderer.invoke('update-settings', settings),
     onNavigate: (callback) => {
         ipcRenderer.on('navigate-to', (_event, route) => callback(route));
     },
+    onAutoCleanupCompleted: (callback) => {
+        ipcRenderer.on('auto-cleanup-completed', (_event, data) => callback(data));
+    },
+    getHistory: () => ipcRenderer.invoke('get-history'),
+    clearHistory: () => ipcRenderer.invoke('clear-history'),
+    addHistoryEntry: (entry) => ipcRenderer.invoke('add-history-entry', entry),
     platform: process.platform
 });

@@ -1,4 +1,6 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, Notification, shell } from 'electron';
+import electronUpdaterPkg from 'electron-updater';
+const { autoUpdater } = electronUpdaterPkg;
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { statfs, readdir } from 'fs/promises';
@@ -9,6 +11,7 @@ import { scanBrowserPrivacy, cleanBrowserPrivacy } from './browser.js';
 import { getStartupItems, toggleStartupItem } from './startup.js';
 import { scanSystemJunk, cleanSystemJunk, SYSTEM_CATEGORIES } from './systemCleaner.js';
 import { getSettings, updateSettings } from './settings.js';
+import { getHistory, clearHistory, addHistoryEntry } from './history.js';
 import * as os from 'os';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,15 +53,25 @@ function startScheduledCleanupCheck() {
                     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
                 };
                 const cleanedStr = formatBytes(totalBytes);
+                await addHistoryEntry({
+                    timestamp: Date.now(),
+                    scanType: 'Auto System Cleanup',
+                    bytesCleaned: totalBytes,
+                    details: 'Scheduled background cleanup.'
+                });
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send('auto-cleanup-completed', {
+                        totalBytes,
+                        cleanedStr,
+                        scanResults
+                    });
+                }
                 const notification = new Notification({
                     title: 'SmartSweep AI',
                     body: `Your daily system cleanup just freed up ${cleanedStr}. Click here to view details.`
                 });
                 notification.on('click', () => {
-                    createWindow();
-                    if (mainWindow && !mainWindow.isDestroyed()) {
-                        mainWindow.webContents.send('navigate-to', '/system-cleaner');
-                    }
+                    triggerNavigation('/system-cleaner');
                 });
                 notification.show();
             }
@@ -178,8 +191,10 @@ function createWindow() {
     });
 }
 function revealMainWindow() {
-    if (!mainWindow || mainWindow.isDestroyed())
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        createWindow();
         return;
+    }
     mainWindow.show();
     // Soft fade-in over 200 ms
     let opacity = 0;
@@ -193,12 +208,28 @@ function revealMainWindow() {
     };
     step();
 }
+function triggerNavigation(route) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        createWindow();
+        mainWindow?.webContents.once('did-finish-load', () => {
+            mainWindow?.webContents.send('navigate-to', route);
+        });
+    }
+    else {
+        revealMainWindow();
+        mainWindow.webContents.send('navigate-to', route);
+    }
+}
 function createTray() {
-    const iconPath = path.join(__dirname, '../build/icon.ico');
+    const iconPath = app.isPackaged ? path.join(__dirname, '../dist-react/icon.png') : path.join(__dirname, '../public/icon.png');
     const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     tray = new Tray(icon);
     const contextMenu = Menu.buildFromTemplate([
-        { label: 'Open SmartSweep', click: () => createWindow() },
+        { label: 'Open SmartSweep', click: () => triggerNavigation('/') },
+        { type: 'separator' },
+        { label: 'Space Analyzer', click: () => triggerNavigation('/scan') },
+        { label: 'System Cleaner', click: () => triggerNavigation('/system-cleaner') },
+        { label: 'Privacy Shield', click: () => triggerNavigation('/privacy') },
         { type: 'separator' },
         { label: 'Quit', click: () => {
                 isQuitting = true;
@@ -285,6 +316,7 @@ async function checkOrphanedApps() {
     }
 }
 app.whenReady().then(async () => {
+    autoUpdater.checkForUpdatesAndNotify();
     cleanupQuarantine();
     // 1. Splash appears immediately
     createSplashWindow();
@@ -327,7 +359,21 @@ app.on('before-quit', () => {
 });
 // --- IPC Handlers ---
 ipcMain.handle('scan-browser-privacy', async () => await scanBrowserPrivacy());
-ipcMain.handle('clean-browser-privacy', async (_, browsers) => await cleanBrowserPrivacy(browsers));
+ipcMain.handle('clean-browser-privacy', async (_, browsers) => {
+    const beforeScan = await scanBrowserPrivacy();
+    const beforeSize = browsers.reduce((acc, b) => {
+        const found = beforeScan.find(s => s.browser.toLowerCase() === b.toLowerCase());
+        return acc + (found?.totalSize || 0);
+    }, 0);
+    const res = await cleanBrowserPrivacy(browsers);
+    const afterScan = await scanBrowserPrivacy();
+    const afterSize = browsers.reduce((acc, b) => {
+        const found = afterScan.find(s => s.browser.toLowerCase() === b.toLowerCase());
+        return acc + (found?.totalSize || 0);
+    }, 0);
+    const bytesDeleted = Math.max(0, beforeSize - afterSize);
+    return { ...res, bytesDeleted };
+});
 ipcMain.handle('delete-files', async (_, paths) => await deleteFiles(paths));
 ipcMain.handle('restore-file', async (_, originalPath) => await restoreFile(originalPath));
 ipcMain.handle('get-startup-items', async () => await getStartupItems());
@@ -349,6 +395,31 @@ ipcMain.handle('window-maximize', () => {
         }
     }
 });
+ipcMain.handle('check-for-updates', () => {
+    return new Promise((resolve) => {
+        const onAvailable = (info) => {
+            cleanup();
+            resolve({ available: true, version: info.version });
+        };
+        const onNotAvailable = () => {
+            cleanup();
+            resolve({ available: false });
+        };
+        const onError = (err) => {
+            cleanup();
+            resolve({ error: err.message });
+        };
+        const cleanup = () => {
+            autoUpdater.removeListener('update-available', onAvailable);
+            autoUpdater.removeListener('update-not-available', onNotAvailable);
+            autoUpdater.removeListener('error', onError);
+        };
+        autoUpdater.once('update-available', onAvailable);
+        autoUpdater.once('update-not-available', onNotAvailable);
+        autoUpdater.once('error', onError);
+        autoUpdater.checkForUpdates().catch(onError);
+    });
+});
 // --- Settings IPC ---
 ipcMain.handle('get-settings', async () => {
     return await getSettings();
@@ -362,9 +433,13 @@ ipcMain.handle('get-os-info', () => {
         mainWindow.close();
 });
 ipcMain.handle('window-close', () => {
-    if (mainWindow && !mainWindow.isDestroyed())
-        mainWindow.close();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.hide();
+    }
 });
+ipcMain.handle('get-history', async () => await getHistory());
+ipcMain.handle('clear-history', async () => await clearHistory());
+ipcMain.handle('add-history-entry', async (_, entry) => await addHistoryEntry(entry));
 ipcMain.handle('send-notification', (_, title, body) => {
     try {
         // Only send desktop notifications if the user is NOT actively focusing the app window (e.g. minimized or in background)
@@ -393,8 +468,13 @@ ipcMain.handle('scan-system-junk', async () => {
 });
 ipcMain.handle('clean-system-junk', async (_, categoryIds) => {
     try {
-        await cleanSystemJunk(categoryIds);
-        return { success: true };
+        const beforeScan = await scanSystemJunk();
+        const beforeSize = beforeScan.filter(c => categoryIds.includes(c.categoryId)).reduce((acc, c) => acc + c.totalSize, 0);
+        const cleanRes = await cleanSystemJunk(categoryIds);
+        const afterScan = await scanSystemJunk();
+        const afterSize = afterScan.filter(c => categoryIds.includes(c.categoryId)).reduce((acc, c) => acc + c.totalSize, 0);
+        const bytesDeleted = Math.max(0, beforeSize - afterSize);
+        return { ...cleanRes, bytesDeleted };
     }
     catch (error) {
         console.error('System cleaner clean error:', error);

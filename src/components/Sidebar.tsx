@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, HardDrive, Trash2, Settings, Shield, Zap, Loader2 } from 'lucide-react';
+import { LayoutDashboard, HardDrive, Trash2, Settings, Shield, Zap, Loader2, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/AppContext';
 
@@ -23,6 +23,7 @@ export function Sidebar() {
     { name: 'System Cleaner', path: '/system-cleaner', icon: Trash2, isScanning: systemCleanerState === 'scanning' },
     { name: 'Privacy Shield', path: '/privacy', icon: Shield, isScanning: privacyScanning },
     { name: 'Startup Optimizer', path: '/startup', icon: Zap, isScanning: false },
+    { name: 'Activity Logs', path: '/history', icon: History, isScanning: false },
     { name: 'Settings', path: '/settings', icon: Settings, isScanning: false },
   ];
 

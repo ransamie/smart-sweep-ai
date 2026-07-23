@@ -31,7 +31,8 @@ export function SystemCleanerView() {
     systemCleanerState: scanState,
     setSystemCleanerState: setScanState,
     systemCleanerCategories: categories,
-    setSystemCleanerCategories: setCategories
+    setSystemCleanerCategories: setCategories,
+    setSmartMetrics
   } = useAppContext();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -63,6 +64,17 @@ export function SystemCleanerView() {
           setCategories(combined);
           // Auto-select all by default
           setSelected(new Set(combined.map((c: any) => c.category.id)));
+
+          // @ts-ignore
+          if (window.electronAPI.addHistoryEntry) {
+            // @ts-ignore
+            await window.electronAPI.addHistoryEntry({
+              timestamp: Date.now(),
+              scanType: 'System Scan',
+              bytesCleaned: 0,
+              details: `Found ${combined.length} categories of system junk.`
+            });
+          }
 
           // Send desktop notification
           // @ts-ignore
@@ -100,6 +112,29 @@ export function SystemCleanerView() {
           setError(res.error);
         } else {
           setCleaned(true);
+          
+          const bytesCleaned = res.bytesDeleted || 0;
+          
+          // Invalidate global dashboard metrics so it rescans on next visit
+          // @ts-ignore
+          if (window.electronAPI.setSmartMetrics) {
+            setSmartMetrics(null);
+          } else {
+            // Fallback for context
+            try { setSmartMetrics(null); } catch(e) {}
+          }
+
+          // @ts-ignore
+          if (window.electronAPI.addHistoryEntry) {
+            // @ts-ignore
+            await window.electronAPI.addHistoryEntry({
+              timestamp: Date.now(),
+              scanType: 'System Clean',
+              bytesCleaned,
+              details: `Cleaned ${selected.size} categories.`
+            });
+          }
+
           if (res && res.totalFailed > 0) {
             setLockedNotice(`Notice: System files cleaned! Note: ${res.totalFailed} temporary files are currently locked by active background applications and were safely skipped.`);
           }
@@ -120,10 +155,19 @@ export function SystemCleanerView() {
   };
 
   const toggleAll = () => {
-    if (selected.size === categories.length) {
+    const visibleCategoryIds = categories
+      .filter(c => {
+        const r = results.find(res => res.categoryId === c.id);
+        return r && r.fileCount > 0;
+      })
+      .map(c => c.id);
+
+    const allVisibleSelected = visibleCategoryIds.every(id => selected.has(id));
+
+    if (allVisibleSelected && visibleCategoryIds.length > 0) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(categories.map(c => c.category.id)));
+      setSelected(new Set(visibleCategoryIds));
     }
   };
 
@@ -320,7 +364,10 @@ export function SystemCleanerView() {
 
       {scanState === 'done' && hasJunk && !cleaned && (
         <SelectionFooter
-          selectedCount={selected.size}
+          selectedCount={Array.from(selected).filter(id => {
+            const r = results.find(res => res.categoryId === id);
+            return r && r.fileCount > 0;
+          }).length}
           totalSize={getTotalSelectedSize()}
           onClean={runClean}
           isCleaning={cleaning}

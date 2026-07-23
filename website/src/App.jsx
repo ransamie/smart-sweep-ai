@@ -38,7 +38,7 @@ function App() {
 
       <main>
         {/* Hero Section */}
-        <section className="section" style={{ paddingTop: '10rem', textAlign: 'center' }}>
+        <section className="section hero-section">
           <div className="container">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--glass-bg)', padding: '0.5rem 1rem', borderRadius: '999px', border: '1px solid var(--glass-border)', marginBottom: '2rem', fontSize: '0.875rem' }}>
               <Sparkles size={16} className="text-accent-primary" style={{ color: 'var(--accent-primary)' }} />
@@ -54,7 +54,7 @@ function App() {
               SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your system.
             </p>
             
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div className="hero-buttons">
               <a href="https://github.com/ransamie/smart-sweep-ai/releases/latest" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
                 <Download size={20} />
                 Download Now
@@ -160,12 +160,12 @@ function App() {
       </main>
 
       <footer style={{ borderTop: '1px solid var(--glass-border)', padding: '3rem 0', marginTop: '2rem' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+        <div className="container footer-container" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 24, height: 24, borderRadius: '6px', objectFit: 'contain' }} /> SmartSweep AI
           </div>
           <div>
-            &copy; {new Date().getFullYear()} ransamie. All rights reserved.
+            &copy; {new Date().getFullYear()} Ran Technologies. All rights reserved.
           </div>
         </div>
       </footer>

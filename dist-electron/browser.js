@@ -26,37 +26,39 @@ const PRESERVED_FILES = new Set(['Login Data', 'Login Data-journal', 'Bookmarks'
 async function deleteContents(dirPath) {
     let deleted = 0;
     let failed = 0;
-    try {
-        const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        for (const entry of entries) {
-            if (PRESERVED_FILES.has(entry.name)) {
-                continue;
-            }
-            const fullPath = path.join(dirPath, entry.name);
-            try {
-                await fs.chmod(fullPath, 0o666).catch(() => { });
-                if (entry.isDirectory()) {
-                    await fs.rm(fullPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 50 });
+    async function recursiveDelete(currentPath) {
+        try {
+            const entries = await fs.readdir(currentPath, { withFileTypes: true });
+            for (const entry of entries) {
+                if (PRESERVED_FILES.has(entry.name)) {
+                    continue;
                 }
-                else {
-                    await fs.unlink(fullPath);
-                }
-                deleted++;
-            }
-            catch (e) {
+                const fullPath = path.join(currentPath, entry.name);
                 try {
-                    await fs.rm(fullPath, { recursive: true, force: true });
-                    deleted++;
+                    if (entry.isDirectory()) {
+                        await recursiveDelete(fullPath);
+                        try {
+                            // Try to remove the directory itself after emptying it
+                            await fs.rm(fullPath, { recursive: true, force: true });
+                        }
+                        catch (e) { }
+                    }
+                    else {
+                        await fs.chmod(fullPath, 0o666).catch(() => { });
+                        await fs.unlink(fullPath);
+                        deleted++;
+                    }
                 }
-                catch (err) {
+                catch (e) {
                     failed++;
                 }
             }
         }
+        catch (e) {
+            // Ignore if directory doesn't exist
+        }
     }
-    catch (e) {
-        // Ignore if directory doesn't exist
-    }
+    await recursiveDelete(dirPath);
     return { deleted, failed };
 }
 /**
@@ -181,7 +183,7 @@ export async function getRunningBrowsers() {
             const { stdout } = await execFileAsync('powershell', [
                 '-NoProfile',
                 '-Command',
-                'Get-Process chrome, msedge, firefox -ErrorAction SilentlyContinue | Select-Object -Unique ProcessName | ConvertTo-Json'
+                'Get-Process chrome, msedge, msedgewebview2, firefox -ErrorAction SilentlyContinue | Select-Object -Unique ProcessName | ConvertTo-Json; exit 0'
             ]);
             if (stdout.trim()) {
                 const parsed = JSON.parse(stdout);
@@ -189,7 +191,7 @@ export async function getRunningBrowsers() {
                 const names = list.map((p) => (p.ProcessName || '').toLowerCase());
                 if (names.includes('chrome'))
                     running.push('Google Chrome');
-                if (names.includes('msedge'))
+                if (names.includes('msedge') || names.includes('msedgewebview2'))
                     running.push('Microsoft Edge');
                 if (names.includes('firefox'))
                     running.push('Mozilla Firefox');
@@ -200,7 +202,7 @@ export async function getRunningBrowsers() {
             const lower = stdout.toLowerCase();
             if (lower.includes('chrome'))
                 running.push('Google Chrome');
-            if (lower.includes('msedge'))
+            if (lower.includes('msedge') || lower.includes('msedgewebview2'))
                 running.push('Microsoft Edge');
             if (lower.includes('firefox'))
                 running.push('Mozilla Firefox');
@@ -219,6 +221,12 @@ export async function cleanBrowserPrivacy(browsers) {
     let totalFailed = 0;
     for (const browser of browsers) {
         const b = browser.toLowerCase();
+        if (b === 'chrome' && selectedRunning.includes('Google Chrome'))
+            continue;
+        if (b === 'edge' && selectedRunning.includes('Microsoft Edge'))
+            continue;
+        if (b === 'firefox' && selectedRunning.includes('Mozilla Firefox'))
+            continue;
         if (b === 'chrome') {
             for (const cPath of browserPaths.chrome.cache) {
                 const res = await deleteContents(cPath);

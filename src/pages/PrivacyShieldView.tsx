@@ -9,7 +9,8 @@ export function PrivacyShieldView() {
     privacyResults: results, 
     setPrivacyResults: setResults,
     privacyScanning: scanning,
-    setPrivacyScanning: setScanning
+    setPrivacyScanning: setScanning,
+    setSmartMetrics
   } = useAppContext();
   const [cleaning, setCleaning] = useState(false);
   const [options, setOptions] = useState({
@@ -26,6 +27,18 @@ export function PrivacyShieldView() {
         // @ts-ignore
         const scanResults = await window.electronAPI.scanBrowserPrivacy();
         setResults(scanResults);
+
+        // @ts-ignore
+        if (window.electronAPI.addHistoryEntry) {
+          const browsersFound = Object.keys(scanResults).filter(k => scanResults[k]?.size > 0);
+          // @ts-ignore
+          await window.electronAPI.addHistoryEntry({
+            timestamp: Date.now(),
+            scanType: 'Privacy Scan',
+            bytesCleaned: 0,
+            details: `Found privacy tracks in ${browsersFound.length} browsers.`
+          });
+        }
 
         // Send desktop notification
         // @ts-ignore
@@ -55,6 +68,27 @@ export function PrivacyShieldView() {
         // @ts-ignore
         const res = await window.electronAPI.cleanBrowserPrivacy(browsersToClean);
         if (res) {
+          const bytesCleaned = res.bytesDeleted || 0;
+          
+          // Invalidate global dashboard metrics so it rescans on next visit
+          // @ts-ignore
+          if (window.electronAPI.setSmartMetrics) {
+            setSmartMetrics(null);
+          } else {
+            try { setSmartMetrics(null); } catch(e) {}
+          }
+          
+          // @ts-ignore
+          if (window.electronAPI.addHistoryEntry) {
+            // @ts-ignore
+            await window.electronAPI.addHistoryEntry({
+              timestamp: Date.now(),
+              scanType: 'Privacy Clean',
+              bytesCleaned,
+              details: `Cleaned ${browsersToClean.join(', ')}.`
+            });
+          }
+
           if (res.openBrowsers && res.openBrowsers.length > 0) {
             const browserList = res.openBrowsers.join(', ');
             setLockedWarning(`⚠️ Notice: ${browserList} is currently running in the background (even if you closed its window, Chrome/Edge background processes often remain active in the System Tray). Please right-click ${browserList} in the System Tray and Exit, then click 'Clean Selected' again.`);
@@ -109,12 +143,12 @@ export function PrivacyShieldView() {
             const totalSelectedCacheBytes = results
               ? results
                   .filter((r: any) => selectedBrowsers.includes(r.browser.toLowerCase()))
-                  .reduce((sum: number, r: any) => sum + (r.totalSize || 0), 0)
+                  .reduce((sum: number, r: any) => sum + (r.totalSize > 10 * 1024 * 1024 ? r.totalSize : 0), 0)
               : 0;
             const isCleanDisabled = scanning || cleaning || !results || totalSelectedCacheBytes === 0;
 
             const visibleResults = results 
-              ? results.filter((r: any) => options[r.browser.toLowerCase() as keyof typeof options])
+              ? results.filter((r: any) => options[r.browser.toLowerCase() as keyof typeof options] && r.totalSize > 10 * 1024 * 1024)
               : null;
 
             return (

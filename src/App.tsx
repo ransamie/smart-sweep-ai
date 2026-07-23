@@ -8,6 +8,7 @@ import { DeepScanView } from './pages/DeepScanView';
 import { SystemCleanerView } from './pages/SystemCleanerView';
 import { PrivacyShieldView } from './pages/PrivacyShieldView';
 import { StartupOptimizerView } from './pages/StartupOptimizerView';
+import { HistoryView } from './pages/HistoryView';
 import { SettingsView } from './pages/SettingsView';
 
 function AppRoot() {
@@ -27,6 +28,7 @@ function AppRoot() {
           <Route path="/system-cleaner" element={<SystemCleanerView />} />
           <Route path="/privacy" element={<PrivacyShieldView />} />
           <Route path="/startup" element={<StartupOptimizerView />} />
+          <Route path="/history" element={<HistoryView />} />
           <Route path="/settings" element={<SettingsView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

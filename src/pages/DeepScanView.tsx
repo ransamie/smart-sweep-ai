@@ -83,6 +83,17 @@ export function DeepScanView() {
         setProgress(100);
         setResults(largeFiles);
 
+        // @ts-ignore
+        if (window.electronAPI.addHistoryEntry) {
+          // @ts-ignore
+          await window.electronAPI.addHistoryEntry({
+            timestamp: Date.now(),
+            scanType: 'Space Analyzer Scan',
+            bytesCleaned: 0,
+            details: `Found ${largeFiles.length} large files on ${selectedDrive}.`
+          });
+        }
+
         // Send desktop notification if completed
         // @ts-ignore
         if (window.electronAPI.sendNotification) {
@@ -133,6 +144,18 @@ export function DeepScanView() {
         if (window.electronAPI) {
           // @ts-ignore
           await window.electronAPI.deleteFiles(pathsToDelete);
+          
+          // @ts-ignore
+          if (window.electronAPI.addHistoryEntry) {
+            // @ts-ignore
+            await window.electronAPI.addHistoryEntry({
+              timestamp: Date.now(),
+              scanType: 'Large Files Clean',
+              bytesCleaned: totalSelectedSize,
+              details: `Deleted ${pathsToDelete.length} files.`
+            });
+          }
+
           setResults(results.filter(f => !selected.has(f.id)));
           setSelected(new Set());
         }
@@ -415,7 +438,7 @@ export function DeepScanView() {
                       </div>
                       <label htmlFor={`file-${file.id}`} className="ml-4 flex-1 cursor-pointer min-w-0">
                         <p className="text-sm font-medium leading-none text-foreground">{file.name}</p>
-                        <p className="text-sm text-muted-foreground mt-1 truncate max-w-xl" title={file.path}>
+                        <p className="text-sm text-muted-foreground mt-1 truncate" title={file.path}>
                           {file.path}
                         </p>
                       </label>

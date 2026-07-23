@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2, Download } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,34 @@ export function SettingsView() {
   const [localKey, setLocalKey] = useState(apiKey || '');
   const [validating, setValidating] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateStatus(null);
+    try {
+      // @ts-ignore
+      if (window.electronAPI?.checkForUpdates) {
+        // @ts-ignore
+        const result = await window.electronAPI.checkForUpdates();
+        if (result.error) {
+          setUpdateStatus(`Error: ${result.error}`);
+        } else if (result.available) {
+          setUpdateStatus(`Version ${result.version} is available. It will be downloaded in the background.`);
+        } else {
+          setUpdateStatus('You are up to date!');
+        }
+      } else {
+        setUpdateStatus('Update check is not available in browser mode.');
+      }
+    } catch (e: any) {
+      setUpdateStatus(`Error: ${e.message}`);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const handleSaveKey = async () => {
     if (!localKey.trim()) {
@@ -173,6 +201,27 @@ export function SettingsView() {
             file extensions, and application vendor names. Personal file names, document contents, and deep paths 
             are never transmitted over the network.
           </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-orange-500" /> Software Updates
+          </CardTitle>
+          <CardDescription>Check for the latest version of SmartSweep AI.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 items-start">
+            <Button onClick={handleCheckUpdates} disabled={checkingUpdate} className="gap-2" variant="outline">
+              {checkingUpdate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+            </Button>
+            {updateStatus && (
+              <p className={`text-sm ${updateStatus.includes('up to date') ? 'text-green-500' : updateStatus.includes('Error') ? 'text-red-500' : 'text-blue-500'}`}>
+                {updateStatus}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

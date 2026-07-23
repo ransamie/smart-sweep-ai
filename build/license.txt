@@ -1,0 +1,36 @@
+END USER LICENSE AGREEMENT (EULA) FOR SMARTSWEEP AI
+
+IMPORTANT - READ CAREFULLY: This End User License Agreement ("EULA") is a legal agreement between you (either an individual or a single entity) and Ran Technologies ("Developer") for the SmartSweep AI software product, which includes computer software and may include associated media, printed materials, and "online" or electronic documentation ("SOFTWARE PRODUCT").
+
+By installing, copying, or otherwise using the SOFTWARE PRODUCT, you agree to be bound by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the SOFTWARE PRODUCT.
+
+1. GRANT OF LICENSE
+The Developer grants you a personal, non-exclusive, non-transferable license to install and use the SOFTWARE PRODUCT for your personal or internal business purposes, strictly in accordance with the terms of this EULA.
+
+2. DESCRIPTION OF OTHER RIGHTS AND LIMITATIONS
+a. Limitations on Reverse Engineering, Decompilation, and Disassembly: You may not reverse engineer, decompile, or disassemble the SOFTWARE PRODUCT, except and only to the extent that such activity is expressly permitted by applicable law notwithstanding this limitation.
+b. Separation of Components: The SOFTWARE PRODUCT is licensed as a single product. Its component parts may not be separated for use on more than one computer.
+c. Software Updates: The SOFTWARE PRODUCT may automatically download and install updates from time to time. These updates are designed to improve, enhance, and further develop the SOFTWARE PRODUCT. You agree to receive such updates (and permit the Developer to deliver these to you) as part of your use of the SOFTWARE PRODUCT.
+
+3. DATA PRIVACY AND AI PROCESSING
+a. Anonymized Data Transmission: SmartSweep AI utilizes an external Artificial Intelligence (AI) API to provide intelligent cleanup recommendations. To function, the SOFTWARE PRODUCT securely transmits anonymized metadata to this API. This metadata is strictly limited to: directory sizes, file extensions, and application vendor names.
+b. Personal Data Protection: Under no circumstances does the SOFTWARE PRODUCT transmit personal file names, document contents, deep path structures, or personally identifiable information (PII) over the network for AI processing.
+c. Local Filtering: All file identification and preliminary filtering is performed strictly locally on your machine.
+
+4. USER RESPONSIBILITY AND ACCEPTABLE USE
+a. Review Before Deletion: The SOFTWARE PRODUCT is a system optimization utility designed to permanently delete files and modify system configurations. YOU, the user, bear the sole and ultimate responsibility for reviewing the items selected for deletion before confirming any cleanup operation.
+b. System Files: Deletion of certain system files or application caches may affect the functionality of third-party software. The Developer is not responsible for any loss of functionality resulting from the use of the SOFTWARE PRODUCT.
+
+5. DISCLAIMER OF WARRANTIES
+THE SOFTWARE PRODUCT IS PROVIDED "AS IS" AND "AS AVAILABLE," WITH ALL FAULTS AND WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE DEVELOPER DISCLAIMS ALL WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. THE DEVELOPER DOES NOT WARRANT THAT THE FUNCTIONS CONTAINED IN THE SOFTWARE PRODUCT WILL MEET YOUR REQUIREMENTS, OR THAT THE OPERATION OF THE SOFTWARE PRODUCT WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+6. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE DEVELOPER BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, LOSS OF DATA, SYSTEM CORRUPTION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE PRODUCT, EVEN IF THE DEVELOPER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. BECAUSE SOME STATES AND JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF LIABILITY, THE ABOVE LIMITATION MAY NOT APPLY TO YOU.
+
+7. TERMINATION
+Without prejudice to any other rights, the Developer may terminate this EULA if you fail to comply with the terms and conditions of this EULA. In such event, you must destroy all copies of the SOFTWARE PRODUCT and all of its component parts.
+
+8. GOVERNING LAW
+This EULA is governed by the laws of the jurisdiction in which the Developer resides, without regard to conflict of law principles.
+
+By clicking "I Agree" or continuing with the installation, you acknowledge that you have read this EULA, understand it, and agree to be bound by its terms and conditions.
