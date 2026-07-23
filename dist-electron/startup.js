@@ -51,13 +51,22 @@ async function getWindowsStartupItems() {
             const rawList = Array.isArray(parsed) ? parsed : [parsed];
             for (const entry of rawList) {
                 if (entry.Name && !seenNames.has(entry.Name)) {
+                    const locStr = (entry.Location || '').toUpperCase();
+                    if (locStr.includes('STARTUP')) {
+                        // Skip folder items in PowerShell so the fallback folder scan catches them
+                        // and provides absolute file paths instead of relative names.
+                        continue;
+                    }
+                    let mappedLocation = 'HKCU';
+                    if (locStr.includes('HKLM') || locStr.includes('LOCAL_MACHINE')) {
+                        mappedLocation = 'HKLM';
+                    }
                     seenNames.add(entry.Name);
-                    const isDisabled = (entry.Command || '').toLowerCase().includes('.disabled');
                     items.push({
                         name: entry.Name,
                         path: entry.Command || '',
-                        location: entry.Location || 'Startup',
-                        enabled: !isDisabled
+                        location: mappedLocation,
+                        enabled: true
                     });
                 }
             }
@@ -115,7 +124,7 @@ async function getWindowsStartupItems() {
                         items.push({
                             name: displayName,
                             path: path.join(dir, file.name),
-                            location: 'Startup Folder',
+                            location: 'Folder',
                             enabled: !isDisabled,
                         });
                     }
