@@ -103,7 +103,6 @@ export function SystemCleanerView() {
           if (res && res.totalFailed > 0) {
             setLockedNotice(`Notice: System files cleaned! Note: ${res.totalFailed} temporary files are currently locked by active background applications and were safely skipped.`);
           }
-          await runScan();
         }
       }
     } catch (e: any) {
