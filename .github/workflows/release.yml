@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Install dependencies (non-Windows)
         if: matrix.os != 'windows-latest'
