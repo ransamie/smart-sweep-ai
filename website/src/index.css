@@ -166,29 +166,41 @@ h1, h2, h3 {
 
 .mockup-frame {
   position: relative;
-  background: #000; /* Black bezel */
-  border: 2px solid #2a2a2a; /* Outer edge */
-  border-radius: 20px;
-  padding: 12px 12px 18px 12px; /* Top/side bezels and slightly thicker bottom bezel */
+  background: #0a0a0a;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding-top: 32px; /* Space for macOS title bar */
   overflow: hidden;
   box-shadow: -20px 40px 80px -20px rgba(0, 0, 0, 0.8), 0 0 100px rgba(139, 92, 246, 0.3);
   transform: rotateX(12deg) rotateY(-8deg) rotateZ(2deg) scale(0.95);
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.8s ease;
 }
 
-/* Macbook Camera Notch */
+/* macOS traffic lights */
 .mockup-frame::before {
   content: '';
   position: absolute;
-  top: 12px; /* Starts inside the padding */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 160px;
-  height: 20px;
-  background: #000;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  top: 10px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
   z-index: 10;
+}
+
+/* macOS title bar background */
+.mockup-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 5;
 }
 
 .mockup-container:hover .mockup-frame {
@@ -200,9 +212,8 @@ h1, h2, h3 {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 8px; /* Inner screen border radius */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* Navigation */
