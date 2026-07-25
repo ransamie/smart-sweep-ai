@@ -175,7 +175,7 @@ export function PrivacyShieldView() {
                 {visibleResults && visibleResults.length > 0 && (
                   <div className="mt-8 space-y-4">
                     <h3 className="text-xl font-semibold mb-4">Scan Results</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {visibleResults.map((r: any, i: number) => (
                         <Card key={i} className="bg-muted/10 border-primary/20">
                           <CardHeader className="pb-2">
@@ -187,13 +187,13 @@ export function PrivacyShieldView() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="space-y-1 text-sm text-muted-foreground">
-                            <div className="flex justify-between">
+                            <div className="flex justify-between gap-2">
                               <span>Cache:</span>
-                              <span className="font-medium text-foreground">{(r.cacheSize / (1024 * 1024)).toFixed(2)} MB</span>
+                              <span className="font-medium text-foreground whitespace-nowrap text-right">{(r.cacheSize / (1024 * 1024)).toFixed(2)} MB</span>
                             </div>
-                            <div className="flex justify-between border-t pt-1 mt-1">
+                            <div className="flex justify-between border-t pt-1 mt-1 gap-2">
                               <span>Total:</span>
-                              <span className="font-medium text-foreground">{(r.totalSize / (1024 * 1024)).toFixed(2)} MB</span>
+                              <span className="font-medium text-foreground whitespace-nowrap text-right">{(r.totalSize / (1024 * 1024)).toFixed(2)} MB</span>
                             </div>
                           </CardContent>
                         </Card>

@@ -4,7 +4,7 @@ const { autoUpdater } = electronUpdaterPkg;
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { statfs, readdir } from 'fs/promises';
-import { scanDirectory, getFileSummary, deleteFiles, restoreFile } from './scanner.js';
+import { scanDirectory, deleteFiles, restoreFile } from './scanner.js';
 import { getInstalledApps } from './registry.js';
 import { generateCleanupAdvice, validateApiKey, analyzeStartup, explainPath, clearAiCache } from './ai.js';
 import { scanBrowserPrivacy, cleanBrowserPrivacy } from './browser.js';
@@ -243,21 +243,16 @@ function createTray() {
 }
 async function runBackgroundScan() {
     try {
-        const tempPath = app.getPath('temp');
-        const downloadsPath = app.getPath('downloads');
-        // Pass true for background mode yielding
-        const tempFiles = await scanDirectory(tempPath, true);
-        const downloadFiles = await scanDirectory(downloadsPath, true);
-        const allFiles = [...tempFiles, ...downloadFiles];
-        const summary = getFileSummary(allFiles);
-        // Threshold alert: 5 GB = 5 * 1024 * 1024 * 1024 bytes
-        if (summary.totalSize > 5368709120) {
-            const gbSize = (summary.totalSize / 1073741824).toFixed(1);
+        const junkCategories = await scanSystemJunk();
+        const totalJunkSize = junkCategories.reduce((acc, cat) => acc + cat.totalSize, 0);
+        // Threshold alert: 1 GB = 1 * 1024 * 1024 * 1024 bytes
+        if (totalJunkSize > 1073741824) {
+            const gbSize = (totalJunkSize / 1073741824).toFixed(1);
             const notification = new Notification({
                 title: 'SmartSweep AI',
-                body: `You have ${gbSize} GB of junk files ready to be cleaned.`
+                body: `You have ${gbSize} GB of system junk ready to be cleaned.`
             });
-            notification.on('click', () => createWindow());
+            notification.on('click', () => triggerNavigation('/system-cleaner'));
             notification.show();
         }
     }
@@ -318,6 +313,11 @@ async function checkOrphanedApps() {
 app.whenReady().then(async () => {
     autoUpdater.checkForUpdatesAndNotify();
     cleanupQuarantine();
+    // Register app to start with Windows
+    app.setLoginItemSettings({
+        openAtLogin: true,
+        args: ['--hidden']
+    });
     // 1. Splash appears immediately
     createSplashWindow();
     sendSplashProgress(15, 'Starting core services…');
@@ -331,8 +331,10 @@ app.whenReady().then(async () => {
     const initialApps = await getInstalledApps();
     lastInstalledApps = initialApps.map((a) => a.displayName);
     // Background Timers
-    // 1. Threshold-Based Scan (Every 3 Days = 3 * 24 * 60 * 60 * 1000)
-    setInterval(runBackgroundScan, 259200000);
+    // 1. Threshold-Based Scan (Every 3 Hours = 3 * 60 * 60 * 1000)
+    setInterval(runBackgroundScan, 10800000);
+    // Also trigger a silent initial check 5 minutes after startup
+    setTimeout(runBackgroundScan, 300000);
     // 2. Uninstall-Based Check (Every 1 Day = 24 * 60 * 60 * 1000)
     setInterval(checkOrphanedApps, 86400000);
     // 3. Daily Scheduled Cleanup check (runs every minute)

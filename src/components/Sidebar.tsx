@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, HardDrive, Trash2, Settings, Shield, Zap, Loader2, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/AppContext';
+import packageJson from '../../package.json';
 
 export function Sidebar() {
   const { 
@@ -32,7 +33,10 @@ export function Sidebar() {
       <div className="p-6">
         <h1 className="text-xl font-bold flex items-center gap-3">
           <img src="./logo.png" alt="SmartSweep Logo" className="w-10 h-10 object-contain shrink-0 drop-shadow-md" />
-          <span>SmartSweep AI</span>
+          <div className="flex flex-col">
+            <span>SmartSweep AI</span>
+            <span className="text-xs text-muted-foreground font-normal leading-none mt-1">v{packageJson.version}</span>
+          </div>
         </h1>
       </div>
       

@@ -1,12 +1,12 @@
 import * as os from 'os';
 import * as path from 'path';
-import { readdir, rename } from 'fs/promises';
+import { readdir } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
 /**
  * Get startup items for the current platform.
- * - Windows: Registry Run keys + Startup Folder
+ * - Windows: Registry Run keys + Startup Folder, using PowerShell
  * - macOS: ~/Library/LaunchAgents plist files
  * - Linux: ~/.config/autostart .desktop files
  */
@@ -35,55 +35,111 @@ export async function toggleStartupItem(name, location, enable, itemPath = '') {
     // Windows (default)
     return toggleWindowsStartupItem(name, location, enable, itemPath);
 }
-// ─── Windows ─────────────────────────────────────────────────────
-async function getWindowsStartupItems() {
-    const items = [];
-    const seenNames = new Set();
-    // Primary: Use PowerShell Win32_StartupCommand (Matches Windows Task Manager Startup tab)
+// ─── Windows ──────────────────────────────────────────────────────────────────
+/**
+ * Get the enabled/disabled state of startup items from the StartupApproved registry keys.
+ * This is the exact same source Task Manager reads from.
+ *
+ * The REG_BINARY value format is:
+ *   - Byte 0 = 0x02 → ENABLED
+ *   - Byte 0 = 0x03 → DISABLED
+ */
+async function getStartupApprovedState() {
+    const stateMap = new Map();
+    // PowerShell script to read all StartupApproved keys and return JSON
+    const psScript = `
+$result = @{}
+$approvalPaths = @(
+  @{Hive='HKCU'; Path='Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run'},
+  @{Hive='HKCU'; Path='Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32'},
+  @{Hive='HKCU'; Path='Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder'},
+  @{Hive='HKLM'; Path='SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run'},
+  @{Hive='HKLM'; Path='SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32'},
+  @{Hive='HKLM'; Path='SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\StartupFolder'}
+)
+foreach ($entry in $approvalPaths) {
+  $regPath = "$($entry.Hive):\\$($entry.Path)"
+  try {
+    $props = Get-ItemProperty -Path $regPath -ErrorAction Stop
+    $props.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+      $bytes = $_.Value
+      if ($bytes -is [byte[]]) {
+        $isEnabled = ($bytes[0] -eq 0x02)
+        $result[$_.Name.ToLower()] = $isEnabled
+      }
+    }
+  } catch {}
+}
+$result | ConvertTo-Json -Compress
+`;
     try {
         const { stdout } = await execFileAsync('powershell', [
-            '-NoProfile',
-            '-Command',
-            'Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location | ConvertTo-Json'
+            '-NoProfile', '-NonInteractive', '-Command', psScript
         ]);
-        if (stdout.trim()) {
-            const parsed = JSON.parse(stdout);
-            const rawList = Array.isArray(parsed) ? parsed : [parsed];
-            for (const entry of rawList) {
-                if (entry.Name && !seenNames.has(entry.Name)) {
-                    const locStr = (entry.Location || '').toUpperCase();
-                    if (locStr.includes('STARTUP')) {
-                        // Skip folder items in PowerShell so the fallback folder scan catches them
-                        // and provides absolute file paths instead of relative names.
-                        continue;
-                    }
-                    let mappedLocation = 'HKCU';
-                    if (locStr.includes('HKLM') || locStr.includes('LOCAL_MACHINE')) {
-                        mappedLocation = 'HKLM';
-                    }
-                    seenNames.add(entry.Name);
-                    items.push({
-                        name: entry.Name,
-                        path: entry.Command || '',
-                        location: mappedLocation,
-                        enabled: true
-                    });
-                }
+        if (stdout.trim() && stdout.trim() !== 'null') {
+            const parsed = JSON.parse(stdout.trim());
+            for (const [key, val] of Object.entries(parsed)) {
+                stateMap.set(key.toLowerCase(), val);
             }
         }
     }
     catch (e) {
-        console.warn('Win32_StartupCommand PowerShell query failed, using registry fallback', e);
+        console.warn('Failed to read StartupApproved state via PowerShell', e);
     }
-    // Fallback / Supplementary scan via registry-js & folders
-    let registryJs;
+    return stateMap;
+}
+async function getWindowsStartupItems() {
+    const items = [];
+    const seenNames = new Set();
+    // Get the definitive enabled/disabled state from StartupApproved keys
+    const approvedState = await getStartupApprovedState();
+    // Helper to determine enabled state: check StartupApproved first, default to true
+    const isEnabled = (name) => {
+        const state = approvedState.get(name.toLowerCase());
+        // If not in StartupApproved at all, the item is enabled by default
+        return state === undefined ? true : state;
+    };
+    // Primary source: PowerShell Win32_StartupCommand (mirrors Task Manager Startup tab)
     try {
-        registryJs = await import('registry-js');
+        const { stdout } = await execFileAsync('powershell', [
+            '-NoProfile', '-NonInteractive', '-Command',
+            'Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location | ConvertTo-Json -Compress'
+        ]);
+        if (stdout.trim()) {
+            const parsed = JSON.parse(stdout.trim());
+            const rawList = Array.isArray(parsed) ? parsed : [parsed];
+            for (const entry of rawList) {
+                if (!entry.Name || seenNames.has(entry.Name))
+                    continue;
+                const locStr = (entry.Location || '').toUpperCase();
+                // Skip startup folder items - handled below with actual file paths
+                if (locStr.includes('STARTUP'))
+                    continue;
+                let mappedLocation = 'HKCU';
+                if (locStr.includes('HKLM') || locStr.includes('LOCAL_MACHINE')) {
+                    mappedLocation = 'HKLM';
+                }
+                seenNames.add(entry.Name);
+                items.push({
+                    name: entry.Name,
+                    path: entry.Command || '',
+                    location: mappedLocation,
+                    enabled: isEnabled(entry.Name),
+                });
+            }
+        }
+    }
+    catch (e) {
+        console.warn('Win32_StartupCommand failed, falling through to registry fallback', e);
+    }
+    // Supplementary: direct registry scan (catches items Win32_StartupCommand may miss)
+    try {
+        const registryJs = await import('registry-js');
         const { enumerateValues, HKEY } = registryJs;
         const registryLocations = [
-            { hive: HKEY.HKEY_CURRENT_USER, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKCU' },
-            { hive: HKEY.HKEY_LOCAL_MACHINE, key: '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM' },
-            { hive: HKEY.HKEY_LOCAL_MACHINE, key: '\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM64' },
+            { hive: HKEY.HKEY_CURRENT_USER, key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKCU' },
+            { hive: HKEY.HKEY_LOCAL_MACHINE, key: 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM' },
+            { hive: HKEY.HKEY_LOCAL_MACHINE, key: 'SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run', locationName: 'HKLM64' },
         ];
         for (const loc of registryLocations) {
             try {
@@ -95,19 +151,15 @@ async function getWindowsStartupItems() {
                             name: val.name,
                             path: val.data,
                             location: loc.locationName,
-                            enabled: true,
+                            enabled: isEnabled(val.name),
                         });
                     }
                 }
             }
-            catch (e) {
-                // Skip inaccessible key
-            }
+            catch { }
         }
     }
-    catch {
-        // Registry-js fallback ignored
-    }
+    catch { }
     // Startup folder scan
     try {
         const { app } = await import('electron');
@@ -118,14 +170,12 @@ async function getWindowsStartupItems() {
                 const files = await readdir(dir, { withFileTypes: true });
                 for (const file of files) {
                     if (file.isFile() && !seenNames.has(file.name)) {
-                        const isDisabled = file.name.endsWith('.disabled');
-                        const displayName = isDisabled ? file.name.slice(0, -9) : file.name;
-                        seenNames.add(displayName);
+                        seenNames.add(file.name);
                         items.push({
-                            name: displayName,
+                            name: file.name,
                             path: path.join(dir, file.name),
                             location: 'Folder',
-                            enabled: !isDisabled,
+                            enabled: isEnabled(file.name),
                         });
                     }
                 }
@@ -138,45 +188,55 @@ async function getWindowsStartupItems() {
     }
     return items;
 }
+/**
+ * Toggle a Windows startup item using PowerShell Set-ItemProperty.
+ * This exactly replicates what Windows Task Manager does internally.
+ *
+ * ENABLED  → Set binary value to 0x02, 0x00, 0x00, 0x00 (12 bytes, rest zero)
+ * DISABLED → Set binary value to 0x03, 0x00, 0x00, 0x00 (12 bytes, rest zero)
+ */
 async function toggleWindowsStartupItem(name, location, enable, itemPath = '') {
+    const isHKLM = location === 'HKLM' || location === 'HKLM64' ||
+        (location === 'Folder' && itemPath.toLowerCase().includes('programdata'));
+    let subKeyType = 'Run';
     if (location === 'Folder') {
-        if (!enable) {
-            if (!itemPath.endsWith('.disabled')) {
-                await rename(itemPath, `${itemPath}.disabled`);
-            }
-        }
-        else {
-            if (itemPath.endsWith('.disabled')) {
-                const newPath = itemPath.replace(/\.disabled$/, '');
-                await rename(itemPath, newPath);
-            }
-        }
-        return;
+        subKeyType = 'StartupFolder';
     }
-    const regKey = location === 'HKLM'
-        ? 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run'
-        : 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run';
-    if (location === 'HKLM' || location === 'HKCU') {
-        if (enable) {
-            if (!itemPath)
-                throw new Error('Path is required to enable a registry startup item.');
-            let registryJs;
-            try {
-                registryJs = await import('registry-js');
-            }
-            catch {
-                throw new Error('registry-js not available');
-            }
-            const { setValue, RegistryValueType, HKEY } = registryJs;
-            const hive = location === 'HKLM' ? HKEY.HKEY_LOCAL_MACHINE : HKEY.HKEY_CURRENT_USER;
-            setValue(hive, '\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', name, RegistryValueType.REG_SZ, itemPath);
+    const hive = isHKLM ? 'HKLM' : 'HKCU';
+    const regPath = `${hive}:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\${subKeyType}`;
+    // For folder items the value name is the filename, for registry items it's the name
+    const valueName = location === 'Folder' ? path.basename(itemPath) : name;
+    // Task Manager exact byte values:
+    // Enable  = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    // Disable = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    const byteValue = enable
+        ? '[byte[]](0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)'
+        : '[byte[]](0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)';
+    const psScript = `
+$path = '${regPath.replace(/'/g, "''")}';
+$name = '${valueName.replace(/'/g, "''")}';
+$val = ${byteValue};
+if (-not (Test-Path $path)) {
+  New-Item -Path $path -Force | Out-Null
+}
+Set-ItemProperty -Path $path -Name $name -Value $val -Type Binary -Force;
+Write-Output 'OK'
+`;
+    try {
+        const { stdout } = await execFileAsync('powershell', [
+            '-NoProfile', '-NonInteractive', '-Command', psScript
+        ]);
+        if (!stdout.includes('OK')) {
+            throw new Error(`PowerShell did not confirm success. Output: ${stdout}`);
         }
-        else {
-            await execFileAsync('reg', ['delete', regKey, '/v', name, '/f']);
-        }
+        console.log(`Startup item "${valueName}" ${enable ? 'enabled' : 'disabled'} successfully.`);
+    }
+    catch (e) {
+        console.error(`Failed to toggle startup item "${valueName}"`, e);
+        throw e;
     }
 }
-// ─── macOS ───────────────────────────────────────────────────────
+// ─── macOS ───────────────────────────────────────────────────────────────────
 async function getMacStartupItems() {
     const items = [];
     const launchAgentsDir = path.join(os.homedir(), 'Library', 'LaunchAgents');
@@ -184,39 +244,38 @@ async function getMacStartupItems() {
         const files = await readdir(launchAgentsDir, { withFileTypes: true });
         for (const file of files) {
             if (file.name.endsWith('.plist')) {
+                const plistPath = path.join(launchAgentsDir, file.name);
+                let enabled = true;
+                try {
+                    const { stdout } = await execFileAsync('plutil', ['-extract', 'Disabled', 'xml1', '-o', '-', plistPath]);
+                    if (stdout.includes('<true/>'))
+                        enabled = false;
+                }
+                catch { }
                 const name = file.name.replace(/\.plist$/, '');
-                items.push({
-                    name,
-                    path: path.join(launchAgentsDir, file.name),
-                    location: 'LaunchAgents',
-                    enabled: true,
-                });
+                items.push({ name, path: plistPath, location: 'LaunchAgents', enabled });
             }
         }
     }
-    catch {
-        // Directory may not exist
-    }
+    catch { }
     return items;
 }
 async function toggleMacStartupItem(name, location, enable, itemPath = '') {
     if (!itemPath)
         return;
-    if (enable) {
-        // Re-enable: rename .disabled.plist back to .plist
-        if (itemPath.endsWith('.disabled.plist')) {
-            const newPath = itemPath.replace(/\.disabled\.plist$/, '.plist');
-            await rename(itemPath, newPath);
+    try {
+        if (enable) {
+            await execFileAsync('launchctl', ['load', '-w', itemPath]);
+        }
+        else {
+            await execFileAsync('launchctl', ['unload', '-w', itemPath]);
         }
     }
-    else {
-        // Disable: rename .plist to .disabled.plist
-        if (itemPath.endsWith('.plist') && !itemPath.endsWith('.disabled.plist')) {
-            await rename(itemPath, `${itemPath}.disabled`);
-        }
+    catch (e) {
+        console.warn(`launchctl toggle failed for ${itemPath}`, e);
     }
 }
-// ─── Linux ───────────────────────────────────────────────────────
+// ─── Linux ───────────────────────────────────────────────────────────────────
 async function getLinuxStartupItems() {
     const items = [];
     const autostartDir = path.join(os.homedir(), '.config', 'autostart');
@@ -224,33 +283,46 @@ async function getLinuxStartupItems() {
         const files = await readdir(autostartDir, { withFileTypes: true });
         for (const file of files) {
             if (file.name.endsWith('.desktop')) {
+                const desktopPath = path.join(autostartDir, file.name);
+                let enabled = true;
+                try {
+                    const { readFile } = await import('fs/promises');
+                    const content = await readFile(desktopPath, 'utf8');
+                    if (content.includes('Hidden=true') || content.includes('X-GNOME-Autostart-enabled=false')) {
+                        enabled = false;
+                    }
+                }
+                catch { }
                 const name = file.name.replace(/\.desktop$/, '');
-                items.push({
-                    name,
-                    path: path.join(autostartDir, file.name),
-                    location: 'Autostart',
-                    enabled: true,
-                });
+                items.push({ name, path: desktopPath, location: 'Autostart', enabled });
             }
         }
     }
-    catch {
-        // Directory may not exist
-    }
+    catch { }
     return items;
 }
 async function toggleLinuxStartupItem(name, location, enable, itemPath = '') {
     if (!itemPath)
         return;
-    if (enable) {
-        if (itemPath.endsWith('.disabled.desktop')) {
-            const newPath = itemPath.replace(/\.disabled\.desktop$/, '.desktop');
-            await rename(itemPath, newPath);
+    try {
+        const { readFile, writeFile } = await import('fs/promises');
+        let content = await readFile(itemPath, 'utf8');
+        if (enable) {
+            content = content.replace(/Hidden=true/g, 'Hidden=false');
+            content = content.replace(/X-GNOME-Autostart-enabled=false/g, 'X-GNOME-Autostart-enabled=true');
         }
+        else {
+            if (content.includes('Hidden=')) {
+                content = content.replace(/Hidden=false/g, 'Hidden=true');
+            }
+            else {
+                content += '\nHidden=true\n';
+            }
+            content = content.replace(/X-GNOME-Autostart-enabled=true/g, 'X-GNOME-Autostart-enabled=false');
+        }
+        await writeFile(itemPath, content, 'utf8');
     }
-    else {
-        if (itemPath.endsWith('.desktop') && !itemPath.endsWith('.disabled.desktop')) {
-            await rename(itemPath, `${itemPath}.disabled`);
-        }
+    catch (e) {
+        console.warn(`Failed to toggle linux desktop file ${itemPath}`, e);
     }
 }

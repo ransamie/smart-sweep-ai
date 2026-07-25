@@ -13,9 +13,16 @@ jobs:
   release:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -24,10 +31,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: 'npm'
+
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm libarchive-tools fakeroot dpkg
 
       - name: Set Visual C++ toolset for node-gyp (Windows)
         if: matrix.os == 'windows-latest'
         run: echo "npm_config_msvs_version=2022" >> $GITHUB_ENV
+        shell: bash
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -37,7 +52,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: npm ci
 
-      - name: Build and Release Electron app
+      - name: Build and publish Electron app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

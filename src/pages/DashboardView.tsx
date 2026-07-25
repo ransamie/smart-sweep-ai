@@ -24,7 +24,7 @@ export function DashboardView() {
   const [loadingAI, setLoadingAI] = useState(false);
   const [showFullAiModal, setShowFullAiModal] = useState(false);
 
-  const runSmartScan = async (showNotification = false) => {
+  const runSmartScan = async (isManual = false) => {
     setSmartScanning(true);
     try {
       // @ts-ignore
@@ -47,25 +47,27 @@ export function DashboardView() {
         
         setSmartMetrics({ junk: junkCount, privacy: privacyCount });
 
-        // @ts-ignore
-        if (window.electronAPI.addHistoryEntry) {
+        if (isManual) {
           // @ts-ignore
-          await window.electronAPI.addHistoryEntry({
-            timestamp: Date.now(),
-            scanType: 'Smart Scan',
-            bytesCleaned: 0,
-            details: `Found ${junkCount} junk files and ${privacyCount} browser privacy risks.`
-          });
-        }
+          if (window.electronAPI.addHistoryEntry) {
+            // @ts-ignore
+            await window.electronAPI.addHistoryEntry({
+              timestamp: Date.now(),
+              scanType: 'Smart Scan',
+              bytesCleaned: 0,
+              details: `Found ${junkCount} junk files and ${privacyCount} browser privacy risks.`
+            });
+          }
 
-        // Send desktop notification
-        // @ts-ignore
-        if (showNotification && window.electronAPI.sendNotification) {
+          // Send desktop notification
           // @ts-ignore
-          window.electronAPI.sendNotification(
-            'Smart Scan Finished',
-            `Smart Scan finished! System Health Score updated.`
-          );
+          if (window.electronAPI.sendNotification) {
+            // @ts-ignore
+            window.electronAPI.sendNotification(
+              'Smart Scan Finished',
+              `Smart Scan finished! System Health Score updated.`
+            );
+          }
         }
       }
     } catch (e) {
@@ -128,7 +130,7 @@ export function DashboardView() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Overview of your system health and storage.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => runSmartScan(false)} disabled={smartScanning} className="gap-2">
+        <Button variant="outline" size="sm" onClick={() => runSmartScan(true)} disabled={smartScanning} className="gap-2">
           <RefreshCw className={`w-4 h-4 ${smartScanning ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
@@ -168,7 +170,7 @@ export function DashboardView() {
 
                 return (
                   <>
-                    <div className="relative w-32 h-32 flex items-center justify-center rounded-full border-6 border-muted overflow-hidden shrink-0 shadow-inner">
+                    <div className="relative w-32 h-32 flex items-center justify-center rounded-full border-[6px] border-muted overflow-hidden shrink-0 shadow-inner">
                       <div 
                         className="absolute inset-0 transition-all duration-1000" 
                         style={{ background: `conic-gradient(${color} ${score}%, transparent 0)` }}
@@ -293,38 +295,38 @@ export function DashboardView() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/system-cleaner')}>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-blue-500/10 text-blue-500"><Trash2 className="w-5 h-5" /></div>
-                <div>
-                  <div className="font-medium text-sm">System Cleaner</div>
-                  <div className="text-xs text-muted-foreground">Reclaim storage space</div>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-blue-500/10 text-blue-500 shrink-0"><Trash2 className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">System Cleaner</div>
+                  <div className="text-xs text-muted-foreground truncate">Reclaim storage space</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
             
             <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/privacy')}>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-purple-500/10 text-purple-500"><Shield className="w-5 h-5" /></div>
-                <div>
-                  <div className="font-medium text-sm">Privacy Shield</div>
-                  <div className="text-xs text-muted-foreground">Clear browser traces</div>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-purple-500/10 text-purple-500 shrink-0"><Shield className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">Privacy Shield</div>
+                  <div className="text-xs text-muted-foreground truncate">Clear browser traces</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/startup')}>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-green-500/10 text-green-500"><Zap className="w-5 h-5" /></div>
-                <div>
-                  <div className="font-medium text-sm">Startup Optimizer</div>
-                  <div className="text-xs text-muted-foreground">Improve boot time</div>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-green-500/10 text-green-500 shrink-0"><Zap className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">Startup Optimizer</div>
+                  <div className="text-xs text-muted-foreground truncate">Improve boot time</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
           </div>
         </CardContent>

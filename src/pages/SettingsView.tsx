@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAppContext } from '@/context/AppContext';
 import { DriveSelector } from '@/components/DriveSelector';
+import packageJson from '../../package.json';
 
 export function SettingsView() {
   const { apiKey, setApiKey, automationSettings, setAutomationSettings } = useAppContext();
@@ -74,7 +75,9 @@ export function SettingsView() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        </div>
         <p className="text-muted-foreground mt-1">Manage your application preferences and AI configuration.</p>
       </div>
 
@@ -208,7 +211,7 @@ export function SettingsView() {
           <CardTitle className="flex items-center gap-2">
             <Download className="w-5 h-5 text-orange-500" /> Software Updates
           </CardTitle>
-          <CardDescription>Check for the latest version of SmartSweep AI.</CardDescription>
+          <CardDescription>Check for updates. You are currently running <strong className="text-foreground">SmartSweep AI Version {packageJson.version}</strong>.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3 items-start">
