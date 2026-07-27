@@ -225,10 +225,10 @@ function DownloadsSection() {
                 />
               </div>
 
-              <p style={{ marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                ⚠️ <strong style={{ color: 'var(--text-primary)' }}>Windows users:</strong> You may see a SmartScreen prompt — click <em>More info → Run anyway</em>. The app is safe; it is unsigned pending a code signing certificate. &nbsp;&nbsp;
-                🍎 <strong style={{ color: 'var(--text-primary)' }}>macOS users:</strong> Right-click the .dmg and select <em>Open</em> on first launch.
-              </p>
+              <div style={{ marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <span>⚠️ <strong style={{ color: 'var(--text-primary)' }}>Windows users:</strong> You may see a SmartScreen prompt — click <em>More info → Run anyway</em>. The app is safe; it is unsigned pending a code signing certificate.</span>
+                <span>🍎 <strong style={{ color: 'var(--text-primary)' }}>macOS users:</strong> Right-click the .dmg and select <em>Open</em> on first launch.</span>
+              </div>
             </div>
 
             {/* Previous versions */}
