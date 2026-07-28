@@ -1,3 +1,6 @@
 {
-  "installCommand": "npm install --legacy-peer-deps"
+  "buildCommand": "cd website && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "website/dist",
+  "installCommand": "echo skip",
+  "framework": null
 }
