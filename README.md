@@ -107,6 +107,44 @@ smart-sweep-ai/
 
 Pre-built installers for all platforms are available on the [Releases page](https://github.com/ransamie/smart-sweep-ai/releases/latest) or at [smartsweep.ransamie.online](https://smartsweep.ransamie.online).
 
+## End User License Agreement (EULA) & Terms of Service
+
+**IMPORTANT - READ CAREFULLY:** This End User License Agreement ("EULA") is a legal agreement between you (either an individual or a single entity) and Ran Technologies ("Developer") for the SmartSweep AI software product ("SOFTWARE PRODUCT").
+
+By installing, copying, or otherwise using the SOFTWARE PRODUCT, you agree to be bound by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the SOFTWARE PRODUCT.
+
+### 1. Grant of License
+The Developer grants you a personal, non-exclusive, non-transferable license to install and use the SOFTWARE PRODUCT for your personal or internal business purposes, strictly in accordance with the terms of this EULA.
+
+### 2. Description of Other Rights and Limitations
+- **Limitations on Reverse Engineering, Decompilation, and Disassembly:** You may not reverse engineer, decompile, or disassemble the SOFTWARE PRODUCT, except and only to the extent that such activity is expressly permitted by applicable law notwithstanding this limitation.
+- **Separation of Components:** The SOFTWARE PRODUCT is licensed as a single product. Its component parts may not be separated for use on more than one computer.
+- **Software Updates:** The SOFTWARE PRODUCT may automatically download and install updates from time to time to improve and enhance performance. You agree to receive such updates as part of your use of the SOFTWARE PRODUCT.
+
+### 3. Data Privacy and AI Processing
+- **Anonymized Data Transmission:** SmartSweep AI utilizes an external Artificial Intelligence (AI) API to provide intelligent cleanup recommendations. To function, the SOFTWARE PRODUCT securely transmits anonymized metadata to this API. This metadata is strictly limited to: directory sizes, file extensions, and application vendor names.
+- **Personal Data Protection:** Under no circumstances does the SOFTWARE PRODUCT transmit personal file names, document contents, deep path structures, or personally identifiable information (PII) over the network for AI processing.
+- **Local Filtering:** All file identification and preliminary filtering is performed strictly locally on your machine.
+
+### 4. User Responsibility and Acceptable Use
+- **Review Before Deletion:** The SOFTWARE PRODUCT is a system optimization utility designed to permanently delete files and modify system configurations. YOU, the user, bear the sole and ultimate responsibility for reviewing the items selected for deletion before confirming any cleanup operation.
+- **System Files:** Deletion of certain system files or application caches may affect the functionality of third-party software. The Developer is not responsible for any loss of functionality resulting from the use of the SOFTWARE PRODUCT.
+
+### 5. Disclaimer of Warranties
+THE SOFTWARE PRODUCT IS PROVIDED "AS IS" AND "AS AVAILABLE," WITH ALL FAULTS AND WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE DEVELOPER DISCLAIMS ALL WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+### 6. Limitation of Liability
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE DEVELOPER BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF DATA, SYSTEM CORRUPTION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE PRODUCT.
+
+### 7. Termination
+Without prejudice to any other rights, the Developer may terminate this EULA if you fail to comply with its terms and conditions. In such event, you must destroy all copies of the SOFTWARE PRODUCT.
+
+### 8. Governing Law
+This EULA is governed by the laws of the jurisdiction in which the Developer resides, without regard to conflict of law principles.
+
+---
+
 ## License
 
 © 2026 Ran Technologies. All rights reserved.
+
