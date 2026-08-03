@@ -1,23 +1,34 @@
 # SmartSweep AI
 
-SmartSweep AI is an intelligent, modern Windows desktop utility designed to securely scan your storage for temporary junk and orphaned application folders. Powered by a local-first philosophy and optional AI heuristics via the OpenAI API, it provides plain-English advice on what is safe to clean up.
+SmartSweep AI is a free, intelligent, cross-platform desktop utility for Windows, macOS, and Linux that securely scans your storage for temporary junk files, orphaned application folders, and browser cache. Powered by a local-first philosophy and optional AI analysis via the **Google Gemini API**, it provides plain-English advice on what is safe to clean up — without ever compromising your privacy.
 
 ## Key Features
 
-- **Privacy-First AI Analysis:** Uses OpenAI to analyze your system metadata (extensions, totals sizes, orphaned software vendors) to give personalized recommendations. **Raw file contents and personal paths are strictly filtered and never sent to the cloud.**
-- **Orphaned App Detection:** Scans the Windows Registry to cross-reference your `AppData` and `Program Files` against actively installed software, detecting leftover "App Debris".
-- **Background Performance:** Runs completely silently in the system tray, freeing up Chromium RAM overhead when minimized.
-- **Smart Notifications:** Throttled background CPU polling generates OS-level desktop notifications when junk thresholds are reached or uninstalled apps leave debris behind.
-- **Modern Architecture:** Built with Electron, React, TypeScript, Vite, Tailwind CSS, and shadcn/ui.
+- **Privacy-First AI Analysis:** Connects to the Google Gemini API to analyze your system metadata (file categories, total sizes, orphaned software vendors) and deliver personalized, context-aware cleanup recommendations. **Raw file contents and personal file paths are strictly filtered and never sent to the cloud.**
+- **System Cleaner:** Recursively scans and removes temporary files, system cache, orphaned logs, and other junk that silently consumes your storage.
+- **Orphaned App Detection (App Debris):** Scans the Windows Registry to cross-reference your `AppData` and `Program Files` directories against actively installed software, identifying leftover folders from uninstalled applications.
+- **Privacy Shield:** Sweeps tracking files and browser cache from Chrome, Edge, and Firefox without removing active session cookies or logins.
+- **Startup Optimizer:** Manage which applications launch at startup, synced directly with Windows Task Manager's Startup Apps registry keys.
+- **Background Monitoring:** Runs silently in the system tray and triggers OS-level desktop notifications when junk accumulates beyond 1 GB or app debris is detected.
+- **Activity History:** Maintains a complete, reviewable log of every file deleted during each cleanup session.
+- **Modern Architecture:** Built with Electron, React, TypeScript, Vite, and Tailwind CSS.
+
+## Platform Support
+
+| Platform | Installer |
+|---|---|
+| 🪟 Windows | `.exe` (NSIS) · `.msi` (Enterprise) |
+| 🍎 macOS | `.dmg` |
+| 🐧 Linux | `.AppImage` · `.deb` |
 
 ## Prerequisites
 
-- **Node.js**: v18.0.0 or higher.
-- **Windows**: The tool natively uses `registry-js` and targets Windows x64.
+- **Node.js** v18.0.0 or higher
+- **npm** v9.0.0 or higher
 
 ## Getting Started
 
-To install dependencies and start the local development server:
+Install dependencies and start the local development server:
 
 ```bash
 # 1. Install all dependencies
@@ -27,44 +38,76 @@ npm install
 npm run dev
 ```
 
-> **Note:** During development, the React frontend runs on `http://localhost:5173` while the Electron process manages system-level IPC calls in parallel.
+> **Note:** During development, the React frontend runs on `http://localhost:5173` while the Electron main process manages system-level IPC calls in parallel.
 
-## Building and Packaging for Production
+## Building for Production
 
-SmartSweep AI is packaged using `electron-builder`. We have pre-configured it to build two installer types:
-1. **NSIS (.exe):** Standard auto-updating windows installer.
-2. **MSI (.msi):** System-level installer for enterprise deployment.
+SmartSweep AI is packaged using `electron-builder` and supports the following installer targets:
 
-To compile the TypeScript frontend and backend, and bundle the final installers, run:
+**Windows**
+- `NSIS (.exe)` — Standard installer with auto-update support
+- `MSI (.msi)` — Enterprise/per-machine installer
+
+**macOS**
+- `DMG (.dmg)` — Standard macOS disk image
+
+**Linux**
+- `AppImage` — Universal Linux binary
+- `DEB (.deb)` — Debian/Ubuntu package
+
+To compile the TypeScript source and bundle the final installers, run:
 
 ```bash
 npm run dist
 ```
 
-Once the build process completes, your final installers will be available in the `dist/` directory:
-- `dist/SmartSweep AI Setup 1.0.0.exe`
-- `dist/SmartSweep AI Setup 1.0.0.msi`
+Built installers will be output to the `dist/` directory.
 
 ## Security & Admin Rights
 
-Because SmartSweep AI needs to read the global `HKLM` Windows Registry keys and search deep within `AppData`, the installer is configured to prompt the user for elevated privileges (`requestedExecutionLevel: requireAdministrator`).
+On Windows, SmartSweep AI requests elevated privileges at install time (`requestedExecutionLevel: requireAdministrator`) because it needs access to:
+- The global `HKLM` Windows Registry hive (for startup item management and orphaned app detection)
+- System-level directories such as `C:\Windows\Temp` and `C:\ProgramData`
 
 ## Project Structure
 
 ```
 smart-sweep-ai/
-├── electron/                  # Node.js Main Process
-│   ├── main.ts                # Application lifecycle, Tray, Notifications, Background polling
-│   ├── preload.ts             # Secure IPC Bridge
-│   ├── scanner.ts             # Recursive CPU-throttled file scanner
-│   ├── registry.ts            # Windows Registry reader
-│   └── ai.ts                  # OpenAI API integration
-├── src/                       # React Renderer Process
-│   ├── components/            # Reusable UI elements (Sidebar, Layout, SelectionFooter)
-│   ├── context/               # Global state (AppContext)
-│   ├── pages/                 # Main application views (Dashboard, Scan, Debris, Settings)
-│   └── main.tsx               # React entry point
-├── electron-builder.yml       # Production packaging config
-├── tailwind.config.js         # Styling config
-└── vite.config.ts             # Dev tooling config
+├── electron/                   # Node.js Main Process
+│   ├── main.ts                 # App lifecycle, tray, notifications, background polling
+│   ├── preload.cts              # Secure IPC bridge (context isolation)
+│   ├── scanner.ts              # CPU-throttled recursive file scanner
+│   ├── systemCleaner.ts        # System junk & temp file removal logic
+│   ├── registry.ts             # Windows Registry reader (orphaned app detection)
+│   ├── browser.ts              # Browser cache detection (Chrome, Edge, Firefox)
+│   ├── startup.ts              # Startup program manager (Task Manager sync)
+│   ├── history.ts              # Deletion activity log
+│   ├── settings.ts             # Persistent user settings
+│   ├── ai.ts                   # Google Gemini API integration
+│   └── splash.html             # Splash screen shown on launch
+├── src/                        # React Renderer Process
+│   ├── components/             # Reusable UI elements (Sidebar, Layout, etc.)
+│   ├── context/                # Global state (AppContext)
+│   ├── pages/                  # Application views:
+│   │   ├── DashboardView.tsx   # Main overview with storage stats
+│   │   ├── SystemCleanerView.tsx
+│   │   ├── DeepScanView.tsx    # App debris / orphaned folder scanner
+│   │   ├── PrivacyShieldView.tsx
+│   │   ├── StartupOptimizerView.tsx
+│   │   ├── HistoryView.tsx
+│   │   ├── SettingsView.tsx
+│   │   └── OnboardingView.tsx
+│   └── main.tsx                # React entry point
+├── website/                    # Marketing website (separate Vite/React app)
+├── electron-builder.yml        # Production packaging config
+├── tailwind.config.js          # Tailwind CSS config
+└── vite.config.ts              # Vite dev tooling config
 ```
+
+## Download
+
+Pre-built installers for all platforms are available on the [Releases page](https://github.com/ransamie/smart-sweep-ai/releases/latest) or at [smartsweep.ransamie.online](https://smartsweep.ransamie.online).
+
+## License
+
+© 2026 Ran Technologies. All rights reserved.
