@@ -17,7 +17,7 @@ SmartSweep AI is a free, intelligent, cross-platform desktop utility for Windows
 
 | Platform | Installer |
 |---|---|
-| 🪟 Windows | `.exe` (NSIS) · `.msi` (Enterprise) |
+| 🪟 Windows | `.exe` (NSIS Installer) |
 | 🍎 macOS | `.dmg` |
 | 🐧 Linux | `.AppImage` · `.deb` |
 
@@ -46,7 +46,6 @@ SmartSweep AI is packaged using `electron-builder` and supports the following in
 
 **Windows**
 - `NSIS (.exe)` — Standard installer with auto-update support
-- `MSI (.msi)` — Enterprise/per-machine installer
 
 **macOS**
 - `DMG (.dmg)` — Standard macOS disk image
