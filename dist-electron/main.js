@@ -319,6 +319,9 @@ async function checkOrphanedApps() {
     }
 }
 app.whenReady().then(async () => {
+    if (process.platform === 'win32') {
+        app.setAppUserModelId('com.rantechnologies.smartsweepai');
+    }
     autoUpdater.checkForUpdatesAndNotify();
     cleanupQuarantine();
     // Register app to start with Windows

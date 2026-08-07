@@ -10,7 +10,8 @@ export function PrivacyShieldView() {
     setPrivacyResults: setResults,
     privacyScanning: scanning,
     setPrivacyScanning: setScanning,
-    setSmartMetrics
+    setSmartMetrics,
+    refreshDiskSpace
   } = useAppContext();
   const [cleaning, setCleaning] = useState(false);
   const [options, setOptions] = useState({
@@ -75,7 +76,8 @@ export function PrivacyShieldView() {
         if (res) {
           const bytesCleaned = res.bytesDeleted || 0;
           
-          // Invalidate global dashboard metrics so it rescans on next visit
+          // Refresh drive volume capacity immediately after cleaning
+          await refreshDiskSpace();
           // @ts-ignore
           if (window.electronAPI.setSmartMetrics) {
             setSmartMetrics(null);

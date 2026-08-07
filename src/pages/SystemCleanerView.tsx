@@ -32,7 +32,8 @@ export function SystemCleanerView() {
     setSystemCleanerState: setScanState,
     systemCleanerCategories: categories,
     setSystemCleanerCategories: setCategories,
-    setSmartMetrics
+    setSmartMetrics,
+    refreshDiskSpace
   } = useAppContext();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -115,7 +116,8 @@ export function SystemCleanerView() {
           
           const bytesCleaned = res.bytesDeleted || 0;
           
-          // Invalidate global dashboard metrics so it rescans on next visit
+          // Refresh drive volume capacity immediately after cleaning
+          await refreshDiskSpace();
           // @ts-ignore
           if (window.electronAPI.setSmartMetrics) {
             setSmartMetrics(null);

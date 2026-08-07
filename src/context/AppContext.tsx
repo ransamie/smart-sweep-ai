@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface AppState {
   apiKey: string | null;
@@ -12,6 +12,7 @@ interface AppState {
   selectedDrive: string;
   setSelectedDrive: (drive: string) => void;
   availableDrives: Array<{ letter: string; root: string; label: string; total: number; free: number; used: number }>;
+  refreshDiskSpace: () => Promise<void>;
   
   dashboardSummary: string | null;
   setDashboardSummary: (s: string | null) => void;
@@ -80,6 +81,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [automationSettings, setAutomationSettingsState] = useState<{ scheduledCleanupEnabled: boolean; scheduledCleanupTime: string } | null>(null);
 
+  const refreshDiskSpace = useCallback(async () => {
+    // @ts-ignore
+    if (window.electronAPI) {
+      try {
+        // @ts-ignore
+        if (window.electronAPI.getDrives) {
+          // @ts-ignore
+          const drives = await window.electronAPI.getDrives();
+          if (Array.isArray(drives)) setAvailableDrives(drives);
+        }
+        // @ts-ignore
+        if (window.electronAPI.getDiskSpace) {
+          // @ts-ignore
+          const space = await window.electronAPI.getDiskSpace(selectedDrive);
+          if (space && !space.error) {
+            setDiskSpace(space);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to refresh disk space:', e);
+      }
+    }
+  }, [selectedDrive]);
+
   const setAutomationSettings = (settings: { scheduledCleanupEnabled: boolean; scheduledCleanupTime: string }) => {
     setAutomationSettingsState(settings);
     // @ts-ignore
@@ -111,13 +136,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (window.electronAPI) {
       // @ts-ignore
       window.electronAPI.getSystemPaths().then(setSystemPaths);
-      
-      // Fetch available drives
-      // @ts-ignore
-      if (window.electronAPI.getDrives) {
-        // @ts-ignore
-        window.electronAPI.getDrives().then(setAvailableDrives).catch(console.error);
-      }
 
       // Fetch automation settings
       // @ts-ignore
@@ -129,23 +147,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Fetch disk space when selectedDrive changes
-    // @ts-ignore
-    if (window.electronAPI?.getDiskSpace) {
-      // @ts-ignore
-      window.electronAPI.getDiskSpace(selectedDrive).then((space) => {
-        if (space && !space.error) {
-          setDiskSpace(space);
-        } else {
-          setDiskSpace({ total: 1000000000000, free: 400000000000, used: 600000000000 });
-        }
-      }).catch(() => {
-        setDiskSpace({ total: 1000000000000, free: 400000000000, used: 600000000000 });
-      });
-    } else {
-      setDiskSpace({ total: 1000000000000, free: 400000000000, used: 600000000000 });
-    }
-  }, [selectedDrive]);
+    refreshDiskSpace();
+    // Poll disk space every 30 seconds to keep stats fresh
+    const interval = setInterval(() => {
+      refreshDiskSpace();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [selectedDrive, refreshDiskSpace]);
 
   return (
     <AppContext.Provider value={{
@@ -154,7 +162,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       scanResults, setScanResults,
       systemPaths, diskSpace,
       selectedDrive, setSelectedDrive,
-      availableDrives,
+      availableDrives, refreshDiskSpace,
       dashboardSummary, setDashboardSummary,
       deepScanResults, setDeepScanResults,
       deepScanExplanation, setDeepScanExplanation,
