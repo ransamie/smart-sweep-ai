@@ -110,17 +110,17 @@ export function StartupOptimizerView() {
       {/* Toast notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border text-sm font-medium ${
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm font-medium backdrop-blur-md ${
             toast.enabled 
-              ? 'bg-green-500/10 border-green-500/30 text-green-400'
-              : 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+              ? 'bg-slate-900/95 border-emerald-500/50 text-slate-100 shadow-emerald-950/50'
+              : 'bg-slate-900/95 border-amber-500/50 text-slate-100 shadow-amber-950/50'
           }`}>
             {toast.enabled 
-              ? <CheckCircle className="w-4 h-4 shrink-0" /> 
-              : <XCircle className="w-4 h-4 shrink-0" />
+              ? <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" /> 
+              : <XCircle className="w-5 h-5 shrink-0 text-amber-400" />
             }
-            <span>
-              <strong>{toast.name}</strong> {toast.enabled ? 'enabled' : 'disabled'} at startup
+            <span className="text-slate-100">
+              <strong className="text-white font-semibold">{toast.name}</strong> was <span className={toast.enabled ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>{toast.enabled ? 'enabled' : 'disabled'}</span> at startup
             </span>
           </div>
         </div>

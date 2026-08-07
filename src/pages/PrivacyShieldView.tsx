@@ -223,7 +223,7 @@ export function PrivacyShieldView() {
                 </div>
 
                 {openBrowsers.length > 0 && (
-                  <div className="mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+                  <div className="mt-4 p-4 rounded-xl border border-amber-500/50 bg-amber-950/90 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl backdrop-blur-md animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                       <div className="text-xs leading-relaxed">
