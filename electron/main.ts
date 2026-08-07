@@ -179,24 +179,33 @@ function createWindow() {
   mainWindow.webContents.on('did-start-loading', () => {
     sendSplashProgress(55, 'Loading interface…');
   });
-  mainWindow.webContents.on('did-finish-load', () => {
-    sendSplashProgress(80, 'Connecting to system APIs…');
-  });
 
-  mainWindow.once('ready-to-show', () => {
-    sendSplashProgress(92, 'Almost ready…');
+  let splashClosed = false;
+  const finishSplash = () => {
+    if (splashClosed) return;
+    splashClosed = true;
+
+    sendSplashProgress(100, 'Ready!');
     const elapsed = Date.now() - splashStartTime;
     const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
 
     setTimeout(() => {
-      // Tell splash to fade out
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.webContents.send('splash-close');
       } else {
-        // Splash already gone — just show main
         revealMainWindow();
       }
     }, remaining);
+  };
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    sendSplashProgress(85, 'Connecting to system APIs…');
+    // Fallback: trigger splash close 400ms after load finishes in case ready-to-show doesn't fire
+    setTimeout(finishSplash, 400);
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    finishSplash();
   });
 
   mainWindow.on('close', (event) => {
@@ -466,6 +475,16 @@ ipcMain.handle('check-for-updates', () => {
 
     autoUpdater.checkForUpdates().catch(onError);
   });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-downloaded', info.version);
+  }
+});
+
+ipcMain.handle('restart-and-install', () => {
+  autoUpdater.quitAndInstall(false, true);
 });
 // --- Settings IPC ---
 ipcMain.handle('get-settings', async () => {

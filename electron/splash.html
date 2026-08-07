@@ -260,17 +260,30 @@
         setProgress(data.percent, data.label);
       });
 
-      ipcRenderer.on('splash-close', function() {
+      var doneTriggered = false;
+      function triggerDone() {
+        if (doneTriggered) return;
+        doneTriggered = true;
         setProgress(100, 'Ready!');
         setTimeout(function() {
           document.body.classList.add('fade-out');
           setTimeout(function() { ipcRenderer.send('splash-done'); }, 340);
         }, 300);
+      }
+
+      ipcRenderer.on('splash-close', function() {
+        triggerDone();
       });
+
+      /* Hard safety fallback: auto-close splash after 6.5 seconds no matter what */
+      setTimeout(function() {
+        triggerDone();
+      }, 6500);
     } catch(e) {
       console.warn('IPC wiring failed:', e.message);
       setTimeout(function() {
         document.body.classList.add('fade-out');
+        setTimeout(function() { ipcRenderer.send('splash-done'); }, 340);
       }, 5000);
     }
   </script>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2, Download, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,26 @@ export function SettingsView() {
 
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const [downloadedVersion, setDownloadedVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    // @ts-ignore
+    if (window.electronAPI?.onUpdateDownloaded) {
+      // @ts-ignore
+      window.electronAPI.onUpdateDownloaded((ver: string) => {
+        setDownloadedVersion(ver);
+        setUpdateStatus(`Version ${ver} has finished downloading and is ready to install!`);
+      });
+    }
+  }, []);
+
+  const handleRestartAndInstall = () => {
+    // @ts-ignore
+    if (window.electronAPI?.restartAndInstall) {
+      // @ts-ignore
+      window.electronAPI.restartAndInstall();
+    }
+  };
 
   const handleCheckUpdates = async () => {
     setCheckingUpdate(true);
@@ -27,9 +47,9 @@ export function SettingsView() {
         if (result.error) {
           setUpdateStatus(`Error: ${result.error}`);
         } else if (result.available) {
-          setUpdateStatus(`Version ${result.version} is available. It will be downloaded in the background.`);
+          setUpdateStatus(`Version ${result.version} is available. Downloading silently in the background...`);
         } else {
-          setUpdateStatus('You are up to date!');
+          setUpdateStatus('You are running the latest version!');
         }
       } else {
         setUpdateStatus('Update check is not available in browser mode.');
@@ -200,12 +220,13 @@ export function SettingsView() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-            SmartSweep AI uses strict local filters. When sending data to OpenAI, we only send directory sizes, 
+            SmartSweep AI uses strict local filters. When sending data to Google Gemini API, we only send directory sizes, 
             file extensions, and application vendor names. Personal file names, document contents, and deep paths 
             are never transmitted over the network.
           </p>
         </CardContent>
       </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,12 +236,21 @@ export function SettingsView() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3 items-start">
-            <Button onClick={handleCheckUpdates} disabled={checkingUpdate} className="gap-2" variant="outline">
-              {checkingUpdate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {checkingUpdate ? 'Checking...' : 'Check for Updates'}
-            </Button>
+            <div className="flex gap-3 items-center flex-wrap">
+              <Button onClick={handleCheckUpdates} disabled={checkingUpdate} className="gap-2" variant="outline">
+                {checkingUpdate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+              </Button>
+
+              {downloadedVersion && (
+                <Button onClick={handleRestartAndInstall} className="bg-green-600 hover:bg-green-700 text-white font-semibold gap-2 animate-pulse">
+                  <RefreshCw className="w-4 h-4" /> Restart & Install v{downloadedVersion} Now
+                </Button>
+              )}
+            </div>
+
             {updateStatus && (
-              <p className={`text-sm ${updateStatus.includes('up to date') ? 'text-green-500' : updateStatus.includes('Error') ? 'text-red-500' : 'text-blue-500'}`}>
+              <p className={`text-sm ${updateStatus.includes('latest version') || updateStatus.includes('finished') ? 'text-green-400 font-medium' : updateStatus.includes('Error') ? 'text-red-400' : 'text-blue-400'}`}>
                 {updateStatus}
               </p>
             )}
