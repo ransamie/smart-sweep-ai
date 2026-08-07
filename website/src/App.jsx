@@ -119,8 +119,38 @@ function ReleaseRow({ release, isLatest }) {
   );
 }
 
+const FALLBACK_RELEASES = [
+  {
+    id: 'v1.4.1',
+    tag_name: 'v1.4.1',
+    published_at: new Date().toISOString(),
+    assets: [
+      {
+        name: 'SmartSweep-AI-Setup-1.4.1.exe',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.1/SmartSweep-AI-Setup-1.4.1.exe',
+        size: 110550813
+      },
+      {
+        name: 'SmartSweep-AI-1.4.1-arm64.dmg',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.1/SmartSweep-AI-1.4.1-arm64.dmg',
+        size: 134162804
+      },
+      {
+        name: 'SmartSweep-AI-1.4.1.AppImage',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.1/SmartSweep-AI-1.4.1.AppImage',
+        size: 144292619
+      },
+      {
+        name: 'smart-sweep-ai_1.4.1_amd64.deb',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.1/smart-sweep-ai_1.4.1_amd64.deb',
+        size: 89437108
+      }
+    ]
+  }
+];
+
 function DownloadsSection() {
-  const [releases, setReleases] = useState([]);
+  const [releases, setReleases] = useState(FALLBACK_RELEASES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -129,12 +159,19 @@ function DownloadsSection() {
     fetch(`${GITHUB_API}?per_page=10`)
       .then(r => r.json())
       .then(data => {
-        const published = data.filter(r => !r.draft && !r.prerelease);
-        setReleases(published);
+        if (Array.isArray(data)) {
+          const published = data.filter(r => !r.draft && !r.prerelease);
+          if (published.length > 0) {
+            setReleases(published);
+            setLoading(false);
+            return;
+          }
+        }
+        setReleases(FALLBACK_RELEASES);
         setLoading(false);
       })
       .catch(() => {
-        setError('Could not load releases. Please try again later.');
+        setReleases(FALLBACK_RELEASES);
         setLoading(false);
       });
   }, []);
