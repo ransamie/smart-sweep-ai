@@ -36,6 +36,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onAutoCleanupCompleted: (callback) => {
         ipcRenderer.on('auto-cleanup-completed', (_event, data) => callback(data));
     },
+    onUpdateDownloaded: (callback) => {
+        ipcRenderer.on('update-downloaded', (_event, version) => callback(version));
+    },
+    restartAndInstall: () => ipcRenderer.invoke('restart-and-install'),
     getHistory: () => ipcRenderer.invoke('get-history'),
     clearHistory: () => ipcRenderer.invoke('clear-history'),
     addHistoryEntry: (entry) => ipcRenderer.invoke('add-history-entry', entry),

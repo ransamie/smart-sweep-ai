@@ -123,12 +123,26 @@ export function DashboardView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
-    <div className="flex flex-col h-full space-y-6 overflow-hidden animate-fade-in p-2">
-      <div className="flex items-center justify-between shrink-0">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Overview of your system health and storage.</p>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 flex items-center gap-1.5 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 animate-pulse text-primary" /> Welcome back 👋
+            </span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {getGreeting()}!
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">Here is the latest overview of your system health and storage.</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => runSmartScan(true)} disabled={smartScanning} className="gap-2">
           <RefreshCw className={`w-4 h-4 ${smartScanning ? 'animate-spin' : ''}`} /> Refresh

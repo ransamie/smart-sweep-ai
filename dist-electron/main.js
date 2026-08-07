@@ -431,6 +431,14 @@ ipcMain.handle('check-for-updates', () => {
         autoUpdater.checkForUpdates().catch(onError);
     });
 });
+autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-downloaded', info.version);
+    }
+});
+ipcMain.handle('restart-and-install', () => {
+    autoUpdater.quitAndInstall(false, true);
+});
 // --- Settings IPC ---
 ipcMain.handle('get-settings', async () => {
     return await getSettings();
