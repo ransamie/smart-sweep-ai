@@ -123,6 +123,7 @@ function createWindow() {
         height: 768,
         minWidth: 800,
         minHeight: 600,
+        title: 'SmartSweep AI',
         titleBarStyle: 'hidden',
         titleBarOverlay: {
             color: '#0d0d12',

@@ -78,45 +78,76 @@ export function getSystemCategories() {
                 name: 'System Log Files',
                 description: 'System log files that can safely be removed.',
                 paths: [
-                    '/var/log', // only safe subdirectories are handled by the cleaner
+                    '/var/log',
                 ],
             },
         ];
     }
     // Windows (default)
+    const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+    const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+    const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
+    const programData = process.env.ProgramData || 'C:\\ProgramData';
     return [
+        {
+            id: 'windows_update',
+            name: 'Windows Update Cache',
+            description: 'Downloaded installation files from past Windows updates.',
+            paths: [
+                path.join(systemRoot, 'SoftwareDistribution', 'Download'),
+            ],
+        },
         {
             id: 'system_temp',
             name: 'System Temporary Files',
-            description: 'Temporary files created by the operating system.',
+            description: 'Temporary files created by Windows and system components.',
             paths: [
-                path.join(process.env.SystemRoot || 'C:\\Windows', 'Temp'),
+                path.join(systemRoot, 'Temp'),
+                path.join(systemRoot, 'Prefetch'),
             ],
         },
         {
             id: 'app_temp',
-            name: 'Application Temporary Files',
-            description: 'Temporary files created by applications you use.',
+            name: 'User & Application Temp Files',
+            description: 'Temporary files created by installed apps and internet components.',
             paths: [
                 os.tmpdir(), // Typically %LOCALAPPDATA%\Temp
+                path.join(localAppData, 'Microsoft', 'Windows', 'INetCache'),
+                path.join(localAppData, 'Microsoft', 'Windows', 'INetCookies'),
+                path.join(localAppData, 'Microsoft', 'Windows', 'WebCache'),
+            ],
+        },
+        {
+            id: 'shader_cache',
+            name: 'DirectX & GPU Shader Cache',
+            description: 'Pre-compiled graphics shader caches for games and apps.',
+            paths: [
+                path.join(localAppData, 'D3DSCache'),
+                path.join(localAppData, 'NVIDIA', 'DXCache'),
+                path.join(localAppData, 'NVIDIA', 'GLCache'),
+                path.join(localAppData, 'AMD', 'DxCache'),
+                path.join(localAppData, 'Intel', 'ShaderCache'),
             ],
         },
         {
             id: 'system_logs',
-            name: 'System Log Files',
-            description: 'System log files that can safely be removed.',
+            name: 'System Logs & Explorer Cache',
+            description: 'Windows diagnostic logs and thumbnail caches.',
             paths: [
-                path.join(process.env.SystemRoot || 'C:\\Windows', 'Logs'),
-                path.join(process.env.SystemRoot || 'C:\\Windows', 'SoftwareDistribution', 'DataStore', 'Logs'),
+                path.join(systemRoot, 'Logs'),
+                path.join(systemRoot, 'SoftwareDistribution', 'DataStore', 'Logs'),
+                path.join(localAppData, 'Microsoft', 'Windows', 'Explorer'),
             ],
         },
         {
             id: 'crash_dumps',
-            name: 'Crash Reports & Dumps',
-            description: 'Error reporting and crash dump files.',
+            name: 'Crash Reports & Error Dumps',
+            description: 'Windows error reports, minidumps, and crash data.',
             paths: [
-                path.join(process.env.SystemRoot || 'C:\\Windows', 'Minidump'),
-                path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'CrashDumps'),
+                path.join(systemRoot, 'Minidump'),
+                path.join(localAppData, 'CrashDumps'),
+                path.join(programData, 'Microsoft', 'Windows', 'WER', 'ReportArchive'),
+                path.join(programData, 'Microsoft', 'Windows', 'WER', 'ReportQueue'),
             ],
         },
     ];
@@ -139,15 +170,12 @@ async function getDirStats(dirPath) {
                 }
                 else {
                     try {
-                        // Try to open with write access to see if the file is locked or un-deletable
-                        const fd = await fs.open(fullPath, 'r+');
-                        await fd.close();
                         const stats = await fs.stat(fullPath);
                         size += stats.size;
                         count += 1;
                     }
                     catch (e) {
-                        // File is locked (EBUSY) or we don't have permission (EPERM), so we skip counting it
+                        // File inaccessible, skip stats
                     }
                 }
             }
@@ -162,8 +190,9 @@ async function getDirStats(dirPath) {
     return { size, count };
 }
 export async function scanSystemJunk() {
+    const categories = getSystemCategories();
     const results = [];
-    for (const cat of SYSTEM_CATEGORIES) {
+    for (const cat of categories) {
         let totalSize = 0;
         let fileCount = 0;
         for (const targetPath of cat.paths) {
@@ -214,7 +243,8 @@ async function deleteDirContents(dirPath) {
     return { deleted, failed };
 }
 export async function cleanSystemJunk(categoryIds) {
-    const selectedCats = SYSTEM_CATEGORIES.filter(c => categoryIds.includes(c.id));
+    const categories = getSystemCategories();
+    const selectedCats = categories.filter(c => categoryIds.includes(c.id));
     let totalDeleted = 0;
     let totalFailed = 0;
     for (const cat of selectedCats) {
