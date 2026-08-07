@@ -71,6 +71,14 @@ export function PrivacyShieldView() {
     try {
       if (window.electronAPI) {
         const categoriesToClean = Object.keys(options).filter(k => options[k as keyof typeof options]);
+        
+        // Automatically attempt to terminate running browser processes before cleaning
+        // @ts-ignore
+        if (window.electronAPI.closeRunningBrowsers) {
+          // @ts-ignore
+          await window.electronAPI.closeRunningBrowsers(categoriesToClean);
+        }
+
         // @ts-ignore
         const res = await window.electronAPI.cleanBrowserPrivacy(categoriesToClean);
         if (res) {
@@ -100,9 +108,9 @@ export function PrivacyShieldView() {
             setOpenBrowsers(res.openBrowsers);
             const browserList = res.openBrowsers.join(', ');
             const verb = res.openBrowsers.length > 1 ? 'are' : 'is';
-            setLockedWarning(`${browserList} ${verb} running in the background and locking cache files.`);
+            setLockedWarning(`${browserList} ${verb} still running in the background and locking cache files.`);
           } else if (res.totalFailed > 0) {
-            setLockedWarning(`${res.totalFailed} cache files were locked by active system processes and skipped.`);
+            setLockedWarning(`${res.totalFailed} active system cache files were locked and safely skipped.`);
           }
         }
         await handleScan();
@@ -229,8 +237,8 @@ export function PrivacyShieldView() {
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                       <div className="text-xs leading-relaxed">
-                        <strong className="text-sm font-semibold text-white block mb-0.5">Open Browsers Detected</strong>
-                        <span>{openBrowsers.join(', ')} is running in the background. Close them to clean all cache files.</span>
+                        <strong className="text-sm font-semibold text-white block mb-0.5">Running Browsers Detected</strong>
+                        <span>{openBrowsers.join(', ')} is running. Click below to close them automatically and finish cleaning all cache files.</span>
                       </div>
                     </div>
                     <Button 
@@ -239,7 +247,7 @@ export function PrivacyShieldView() {
                       className="bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs gap-2 shrink-0 shadow-md"
                     >
                       <Power className="w-4 h-4" />
-                      Close Browsers & Clean
+                      Force Close Browsers & Clean
                     </Button>
                   </div>
                 )}

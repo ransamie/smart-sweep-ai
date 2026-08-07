@@ -273,6 +273,9 @@ export async function getRunningBrowsers() {
     return running;
 }
 export async function cleanBrowserPrivacy(browsers) {
+    // Automatically attempt to close running instances of the selected browsers first
+    await closeRunningBrowsers(browsers);
+    await new Promise(res => setTimeout(res, 500));
     const runningBrowsers = await getRunningBrowsers();
     const selectedRunning = runningBrowsers.filter(rb => browsers.some(b => rb.toLowerCase().includes(b.toLowerCase())));
     const targetsMap = await getAllBrowserScanTargets();
@@ -281,16 +284,6 @@ export async function cleanBrowserPrivacy(browsers) {
     for (const browserKey of browsers) {
         const key = browserKey.toLowerCase();
         const paths = targetsMap[key] || [];
-        if (key === 'chrome' && selectedRunning.includes('Google Chrome'))
-            continue;
-        if (key === 'edge' && selectedRunning.includes('Microsoft Edge'))
-            continue;
-        if (key === 'brave' && selectedRunning.includes('Brave Browser'))
-            continue;
-        if (key === 'opera' && selectedRunning.includes('Opera Browser'))
-            continue;
-        if (key === 'firefox' && selectedRunning.includes('Mozilla Firefox'))
-            continue;
         for (const pPath of paths) {
             const res = await deleteContents(pPath);
             totalDeleted += res.deleted;
