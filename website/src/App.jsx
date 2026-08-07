@@ -210,6 +210,21 @@ const FALLBACK_RELEASES = [
         name: 'SmartSweep-AI-Setup-1.3.2.exe',
         browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.3.2/SmartSweep-AI-Setup-1.3.2.exe',
         size: 108420000
+      },
+      {
+        name: 'SmartSweep-AI-1.3.2-arm64.dmg',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.3.2/SmartSweep-AI-1.3.2-arm64.dmg',
+        size: 132100000
+      },
+      {
+        name: 'SmartSweep-AI-1.3.2.AppImage',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.3.2/SmartSweep-AI-1.3.2.AppImage',
+        size: 142000000
+      },
+      {
+        name: 'smart-sweep-ai_1.3.2_amd64.deb',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.3.2/smart-sweep-ai_1.3.2_amd64.deb',
+        size: 87500000
       }
     ]
   },
@@ -222,6 +237,21 @@ const FALLBACK_RELEASES = [
         name: 'SmartSweep-AI-Setup-1.1.0.exe',
         browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.1.0/SmartSweep-AI-Setup-1.1.0.exe',
         size: 105400000
+      },
+      {
+        name: 'SmartSweep-AI-1.1.0-arm64.dmg',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.1.0/SmartSweep-AI-1.1.0-arm64.dmg',
+        size: 130000000
+      },
+      {
+        name: 'SmartSweep-AI-1.1.0.AppImage',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.1.0/SmartSweep-AI-1.1.0.AppImage',
+        size: 140000000
+      },
+      {
+        name: 'smart-sweep-ai_1.1.0_amd64.deb',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.1.0/smart-sweep-ai_1.1.0_amd64.deb',
+        size: 85000000
       }
     ]
   },
@@ -234,6 +264,21 @@ const FALLBACK_RELEASES = [
         name: 'SmartSweep-AI-Setup-1.0.2.exe',
         browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.0.2/SmartSweep-AI-Setup-1.0.2.exe',
         size: 104200000
+      },
+      {
+        name: 'SmartSweep-AI-1.0.2-arm64.dmg',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.0.2/SmartSweep-AI-1.0.2-arm64.dmg',
+        size: 129000000
+      },
+      {
+        name: 'SmartSweep-AI-1.0.2.AppImage',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.0.2/SmartSweep-AI-1.0.2.AppImage',
+        size: 139000000
+      },
+      {
+        name: 'smart-sweep-ai_1.0.2_amd64.deb',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.0.2/smart-sweep-ai_1.0.2_amd64.deb',
+        size: 84000000
       }
     ]
   }
