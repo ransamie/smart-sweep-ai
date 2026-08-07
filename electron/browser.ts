@@ -339,3 +339,35 @@ export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDe
 
   return { totalDeleted, totalFailed, openBrowsers: selectedRunning };
 }
+
+export async function closeRunningBrowsers(browsers: string[]): Promise<boolean> {
+  const platform = os.platform();
+  const targets: string[] = [];
+
+  for (const b of browsers) {
+    const lower = b.toLowerCase();
+    if (lower.includes('chrome')) targets.push('chrome');
+    if (lower.includes('edge')) targets.push('msedge', 'msedgewebview2');
+    if (lower.includes('firefox')) targets.push('firefox');
+    if (lower.includes('brave')) targets.push('brave');
+    if (lower.includes('opera')) targets.push('opera');
+  }
+
+  if (targets.length === 0) return true;
+
+  try {
+    if (platform === 'win32') {
+      const command = `Stop-Process -Name ${targets.join(',')} -Force -ErrorAction SilentlyContinue; exit 0`;
+      await execFileAsync('powershell', ['-NoProfile', '-Command', command]);
+    } else {
+      for (const t of targets) {
+        await execFileAsync('pkill', ['-f', t]).catch(() => {});
+      }
+    }
+    await new Promise(res => setTimeout(res, 500));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Chrome, Search, RefreshCw, Layers, Globe } from 'lucide-react';
+import { Shield, Chrome, Search, RefreshCw, Layers, Globe, Power, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 
 export function PrivacyShieldView() {
@@ -21,6 +21,9 @@ export function PrivacyShieldView() {
     opera: true,
     app_caches: true,
   });
+
+  const [openBrowsers, setOpenBrowsers] = useState<string[]>([]);
+  const [lockedWarning, setLockedWarning] = useState<string | null>(null);
 
   const handleScan = async () => {
     setScanning(true);
@@ -60,11 +63,10 @@ export function PrivacyShieldView() {
     }
   };
 
-  const [lockedWarning, setLockedWarning] = useState<string | null>(null);
-
   const handleClean = async () => {
     setCleaning(true);
     setLockedWarning(null);
+    setOpenBrowsers([]);
     try {
       if (window.electronAPI) {
         const categoriesToClean = Object.keys(options).filter(k => options[k as keyof typeof options]);
@@ -93,16 +95,34 @@ export function PrivacyShieldView() {
           }
 
           if (res.openBrowsers && res.openBrowsers.length > 0) {
+            setOpenBrowsers(res.openBrowsers);
             const browserList = res.openBrowsers.join(', ');
             const verb = res.openBrowsers.length > 1 ? 'are' : 'is';
-            const pronoun = res.openBrowsers.length > 1 ? 'their windows' : 'its window';
-            setLockedWarning(`⚠️ Notice: ${browserList} ${verb} currently running in the background. Even if you closed ${pronoun}, background processes often remain active. Please fully close them via the System Tray (near the clock) or Task Manager, then click 'Clean Selected' again.`);
+            setLockedWarning(`${browserList} ${verb} running in the background and locking cache files.`);
           } else if (res.totalFailed > 0) {
-            setLockedWarning(`⚠️ Notice: ${res.totalFailed} cache files were locked by active system processes and safely skipped.`);
+            setLockedWarning(`${res.totalFailed} cache files were locked by active system processes and skipped.`);
           }
         }
         await handleScan();
       }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  const handleCloseAndClean = async () => {
+    setCleaning(true);
+    try {
+      // @ts-ignore
+      if (window.electronAPI && window.electronAPI.closeRunningBrowsers) {
+        // @ts-ignore
+        await window.electronAPI.closeRunningBrowsers(openBrowsers);
+      }
+      setOpenBrowsers([]);
+      setLockedWarning(null);
+      await handleClean();
     } catch (e) {
       console.error(e);
     } finally {
@@ -202,9 +222,29 @@ export function PrivacyShieldView() {
                   </Button>
                 </div>
 
-                {lockedWarning && (
+                {openBrowsers.length > 0 && (
+                  <div className="mt-4 p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-xs leading-relaxed">
+                        <strong className="text-sm font-semibold text-white block mb-0.5">Open Browsers Detected</strong>
+                        <span>{openBrowsers.join(', ')} is running in the background. Close them to clean all cache files.</span>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleCloseAndClean} 
+                      disabled={cleaning}
+                      className="bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs gap-2 shrink-0 shadow-md"
+                    >
+                      <Power className="w-4 h-4" />
+                      Close Browsers & Clean
+                    </Button>
+                  </div>
+                )}
+
+                {lockedWarning && openBrowsers.length === 0 && (
                   <div className="mt-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs leading-relaxed">
-                    {lockedWarning}
+                    ⚠️ {lockedWarning}
                   </div>
                 )}
 

@@ -7,7 +7,7 @@ import { statfs, readdir } from 'fs/promises';
 import { scanDirectory, deleteFiles, restoreFile } from './scanner.js';
 import { getInstalledApps } from './registry.js';
 import { generateCleanupAdvice, validateApiKey, analyzeStartup, explainPath, clearAiCache } from './ai.js';
-import { scanBrowserPrivacy, cleanBrowserPrivacy } from './browser.js';
+import { scanBrowserPrivacy, cleanBrowserPrivacy, closeRunningBrowsers } from './browser.js';
 import { getStartupItems, toggleStartupItem } from './startup.js';
 import { scanSystemJunk, cleanSystemJunk, SYSTEM_CATEGORIES } from './systemCleaner.js';
 import { getSettings, updateSettings } from './settings.js';
@@ -362,6 +362,7 @@ app.on('before-quit', () => {
 });
 // --- IPC Handlers ---
 ipcMain.handle('scan-browser-privacy', async () => await scanBrowserPrivacy());
+ipcMain.handle('close-running-browsers', async (_, browsers) => await closeRunningBrowsers(browsers));
 ipcMain.handle('clean-browser-privacy', async (_, browsers) => {
     const beforeScan = await scanBrowserPrivacy();
     const beforeSize = browsers.reduce((acc, b) => {

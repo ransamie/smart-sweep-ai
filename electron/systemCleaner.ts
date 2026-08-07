@@ -1,6 +1,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 export interface CleanerCategory {
   id: string;
@@ -24,6 +28,14 @@ export function getSystemCategories(): CleanerCategory[] {
 
   if (platform === 'darwin') {
     return [
+      {
+        id: 'recycle_bin',
+        name: 'Trash',
+        description: 'Files in your macOS Trash waiting to be emptied.',
+        paths: [
+          path.join(home, '.Trash'),
+        ],
+      },
       {
         id: 'system_cache',
         name: 'System Cache Files',
@@ -65,6 +77,14 @@ export function getSystemCategories(): CleanerCategory[] {
   if (platform === 'linux') {
     return [
       {
+        id: 'recycle_bin',
+        name: 'Trash',
+        description: 'Files in your Linux Trash waiting to be emptied.',
+        paths: [
+          path.join(home, '.local', 'share', 'Trash', 'files'),
+        ],
+      },
+      {
         id: 'system_cache',
         name: 'System Cache Files',
         description: 'System-level cache files that can safely be removed.',
@@ -102,11 +122,19 @@ export function getSystemCategories(): CleanerCategory[] {
 
   // Windows (default)
   const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+  const systemDrive = process.env.SystemDrive || 'C:';
   const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
-  const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
   const programData = process.env.ProgramData || 'C:\\ProgramData';
 
   return [
+    {
+      id: 'recycle_bin',
+      name: 'Recycle Bin',
+      description: 'Files in your Recycle Bin waiting to be permanently deleted.',
+      paths: [
+        path.join(systemDrive, '$Recycle.Bin'),
+      ],
+    },
     {
       id: 'windows_update',
       name: 'Windows Update Cache',
@@ -268,6 +296,12 @@ export async function cleanSystemJunk(categoryIds: string[]): Promise<{ totalDel
   let totalFailed = 0;
 
   for (const cat of selectedCats) {
+    if (cat.id === 'recycle_bin' && os.platform() === 'win32') {
+      try {
+        await execFileAsync('powershell', ['-NoProfile', '-Command', 'Clear-RecycleBin -Force -ErrorAction SilentlyContinue']);
+      } catch (e) {}
+    }
+
     for (const targetPath of cat.paths) {
       const res = await deleteDirContents(targetPath);
       totalDeleted += res.deleted;

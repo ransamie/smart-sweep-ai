@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   restoreFile: (originalPath: string) => ipcRenderer.invoke('restore-file', originalPath),
   scanBrowserPrivacy: () => ipcRenderer.invoke('scan-browser-privacy'),
   cleanBrowserPrivacy: (browsers: string[]) => ipcRenderer.invoke('clean-browser-privacy', browsers),
+  closeRunningBrowsers: (browsers: string[]) => ipcRenderer.invoke('close-running-browsers', browsers),
   getStartupItems: () => ipcRenderer.invoke('get-startup-items'),
   toggleStartupItem: (name: string, location: string, enable: boolean, itemPath: string) => ipcRenderer.invoke('toggle-startup-item', name, location, enable, itemPath),
   analyzeStartup: (apiKey: string, items: any[]) => ipcRenderer.invoke('analyze-startup', apiKey, items),
