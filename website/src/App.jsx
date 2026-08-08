@@ -123,6 +123,33 @@ function ReleaseRow({ release, isLatest }) {
 
 const FALLBACK_RELEASES = [
   {
+    id: 'v1.4.4',
+    tag_name: 'v1.4.4',
+    published_at: new Date().toISOString(),
+    assets: [
+      {
+        name: 'SmartSweep-AI-Setup-1.4.4.exe',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.4/SmartSweep-AI-Setup-1.4.4.exe',
+        size: 109666683
+      },
+      {
+        name: 'SmartSweep-AI-1.4.4-arm64.dmg',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.4/SmartSweep-AI-1.4.4-arm64.dmg',
+        size: 133459203
+      },
+      {
+        name: 'SmartSweep-AI-1.4.4.AppImage',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.4/SmartSweep-AI-1.4.4.AppImage',
+        size: 143521682
+      },
+      {
+        name: 'smart-sweep-ai_1.4.4_amd64.deb',
+        browser_download_url: 'https://github.com/ransamie/smart-sweep-ai/releases/download/v1.4.4/smart-sweep-ai_1.4.4_amd64.deb',
+        size: 88876400
+      }
+    ]
+  },
+  {
     id: 'v1.4.3',
     tag_name: 'v1.4.3',
     published_at: new Date().toISOString(),
