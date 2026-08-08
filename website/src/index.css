@@ -74,7 +74,7 @@ body {
 /* Typography */
 h1, h2, h3 {
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .gradient-text {
@@ -93,6 +93,7 @@ h1, h2, h3 {
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1.5rem;
   border-radius: 9999px;
@@ -102,6 +103,7 @@ h1, h2, h3 {
   transition: all 0.2s ease;
   cursor: pointer;
   border: none;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -163,6 +165,81 @@ h1, h2, h3 {
 
 .section {
   padding: 6rem 0;
+}
+
+/* Hero Section Formatting */
+.hero-section {
+  padding-top: 9.5rem;
+  text-align: center;
+}
+
+.hero-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--glass-bg);
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  margin: 0 auto 2rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5.5vw, 4.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 auto 1.5rem;
+  text-align: center;
+  max-width: 850px;
+  width: 100%;
+}
+
+.hero-subtitle {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  color: var(--text-secondary);
+  max-width: 620px;
+  margin: 0 auto 2.5rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 480px;
+}
+
+.btn-hero-primary {
+  padding: 1rem 2.25rem;
+  font-size: 1.125rem;
+}
+
+.btn-hero-secondary {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+.hero-subtext {
+  margin-top: 1.25rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 /* App Mockup Presentation */
@@ -306,20 +383,14 @@ h1, h2, h3 {
   }
 }
 
-/* ── Mobile Responsive & Text Centering Overrides ──────────────── */
+/* ── Mobile Responsive Overrides ────────────────────────────── */
 @media (max-width: 768px) {
   .section {
-    padding: 3.25rem 0;
+    padding: 3.5rem 0;
   }
 
   .container {
-    padding: 0 1.15rem;
-    text-align: center !important;
-  }
-
-  /* Global mobile text centering */
-  h1, h2, h3, h4, p {
-    text-align: center !important;
+    padding: 0 1.25rem;
   }
 
   .navbar {
@@ -339,143 +410,58 @@ h1, h2, h3 {
   }
 
   .nav-links .btn {
-    padding: 0.4rem 0.75rem !important;
-    font-size: 0.775rem !important;
+    padding: 0.45rem 0.85rem !important;
+    font-size: 0.8rem !important;
     gap: 0.35rem !important;
     border-radius: 999px;
   }
 
-  /* Hero Section */
   .hero-section {
     padding-top: 5.5rem;
-    text-align: center !important;
+    text-align: center;
+  }
+
+  .hero-content-wrapper {
+    padding: 0 0.25rem;
+  }
+
+  .hero-badge {
+    margin-bottom: 1.25rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.85rem, 7vw, 2.75rem);
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+    text-align: center;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    line-height: 1.55;
+    margin-bottom: 2rem;
+    text-align: center;
+    padding: 0 0.5rem;
   }
 
   .hero-buttons {
     flex-direction: column;
     align-items: stretch;
-    padding: 0;
-    gap: 0.75rem;
     width: 100%;
+    gap: 0.75rem;
   }
 
   .hero-buttons .btn {
     width: 100%;
     justify-content: center;
-    padding: 0.85rem 1.25rem !important;
+    padding: 0.875rem 1.25rem !important;
     font-size: 1rem !important;
   }
 
-  /* Bento Feature Cards Centering */
-  .bento-item {
-    text-align: center !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .bento-item > div:first-child {
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-
-  .bento-item h3,
-  .bento-item p {
-    text-align: center !important;
-  }
-
-  .bento-item ul {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100%;
-    padding: 0;
-  }
-
-  .bento-item li {
-    justify-content: center !important;
-    text-align: center !important;
-  }
-
-  /* Downloads Hero Card Centering */
-  .downloads-hero {
-    text-align: center !important;
-    padding: 1.5rem 1.15rem !important;
-  }
-
-  .downloads-hero-header {
-    flex-direction: column;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-  }
-
-  .downloads-hero-header > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center !important;
-    text-align: center !important;
-    width: 100%;
-  }
-
-  .downloads-hero-header > div > div {
-    justify-content: center !important;
-    width: 100%;
-  }
-
-  .downloads-hero-header p {
-    text-align: center !important;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .downloads-hero-header a.btn {
-    width: 100%;
-    justify-content: center;
-    margin-top: 0.5rem;
-  }
-
-  /* Platform Cards Centering */
-  .platform-card {
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 1.15rem 1rem !important;
-  }
-
-  .platform-card-body {
-    align-items: center !important;
-    text-align: center !important;
-  }
-
-  .platform-card-label {
-    text-align: center !important;
-  }
-
-  /* Previous Releases Centering */
-  .release-row-header {
-    justify-content: center !important;
-    text-align: center !important;
-  }
-
-  .release-row-header > div {
-    justify-content: center !important;
-    flex-wrap: wrap;
-  }
-
-  .release-row-assets {
-    justify-content: center !important;
-  }
-
-  .asset-link {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* Flatten Mockup Frame */
   .mockup-container {
-    margin-top: 1.5rem;
+    margin-top: 1.75rem;
     perspective: none;
   }
 
@@ -486,11 +472,9 @@ h1, h2, h3 {
     padding-top: 24px;
   }
 
-  /* Responsive Glass Cards & Buttons */
   .glass-card {
     padding: 1.75rem 1.25rem !important;
     border-radius: 1.25rem;
-    text-align: center !important;
   }
 
   .btn-group-responsive {
@@ -503,39 +487,39 @@ h1, h2, h3 {
   .btn-group-responsive .btn {
     width: 100%;
     justify-content: center;
-    padding: 0.85rem 1.25rem !important;
+    padding: 0.875rem 1.25rem !important;
     font-size: 1rem !important;
   }
 
-  /* Footer Mobile Centering */
   .footer-container {
     flex-direction: column;
     gap: 1.25rem;
-    text-align: center !important;
-    align-items: center !important;
-    justify-content: center !important;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
   }
 
   .footer-links {
     flex-direction: column;
     gap: 0.85rem !important;
-    align-items: center !important;
-    justify-content: center !important;
+    align-items: center;
+    justify-content: center;
     width: 100%;
   }
 
-  h1 {
-    font-size: clamp(2.25rem, 7vw, 3.25rem) !important;
+  .release-row-assets {
+    justify-content: center;
   }
 
-  h2 {
-    font-size: clamp(1.75rem, 6vw, 2.5rem) !important;
+  .asset-link {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
   .logo span {
-    display: none;
+    font-size: 1.15rem;
   }
 
   .nav-links .nav-link-hide-mobile {

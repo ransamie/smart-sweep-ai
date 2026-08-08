@@ -552,31 +552,33 @@ function App() {
         {/* Hero Section */}
         <section className="section hero-section">
           <div className="container">
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--glass-bg)', padding: '0.5rem 1rem', borderRadius: '999px', border: '1px solid var(--glass-border)', marginBottom: '2rem', fontSize: '0.875rem' }}>
-              <Sparkles size={16} className="text-accent-primary" style={{ color: 'var(--accent-primary)' }} />
-              <span>Powered by Google Gemini 2.5 AI</span>
-            </div>
-            
-            <h1 style={{ fontSize: 'clamp(3rem, 5vw, 4.5rem)', fontWeight: 800, marginBottom: '1.5rem' }}>
-              The Intelligent Way to <br />
-              <span className="gradient-text">Reclaim Your System</span>
-            </h1>
-            
-            <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-              SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your system.
-            </p>
-            
-            <div className="hero-buttons">
-              <a href="#download" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
-                <Download size={20} />
-                Download Now
-              </a>
-              <a href="#features" className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
-                View Features <ArrowRight size={20} />
-              </a>
-            </div>
-            <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              Free & Open Source · Windows · macOS · Linux
+            <div className="hero-content-wrapper">
+              <div className="hero-badge">
+                <Sparkles size={16} style={{ color: 'var(--accent-primary)' }} />
+                <span>Powered by Google Gemini 2.5 AI</span>
+              </div>
+              
+              <h1 className="hero-title">
+                The Intelligent Way to <span className="gradient-text">Reclaim Your System</span>
+              </h1>
+              
+              <p className="hero-subtitle">
+                SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your system.
+              </p>
+              
+              <div className="hero-buttons">
+                <a href="#download" className="btn btn-primary btn-hero-primary">
+                  <Download size={20} />
+                  Download Now
+                </a>
+                <a href="#features" className="btn btn-secondary btn-hero-secondary">
+                  View Features <ArrowRight size={20} />
+                </a>
+              </div>
+
+              <div className="hero-subtext">
+                Free & Open Source · Windows · macOS · Linux
+              </div>
             </div>
 
             <div className="mockup-container">
