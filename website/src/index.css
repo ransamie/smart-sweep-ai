@@ -10,6 +10,15 @@
   --glass-border: rgba(255, 255, 255, 0.08);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
+
+section[id], #donate, #features, #download {
+  scroll-margin-top: 100px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -457,6 +466,14 @@ h1, h2, h3 {
 
 /* ── Mobile Responsive Overrides ────────────────────────────── */
 @media (max-width: 768px) {
+  html {
+    scroll-padding-top: 90px;
+  }
+
+  section[id], #donate, #features, #download {
+    scroll-margin-top: 90px;
+  }
+
   .section {
     padding: 3.5rem 0;
   }

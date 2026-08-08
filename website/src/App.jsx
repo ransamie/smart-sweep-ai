@@ -464,7 +464,7 @@ function DownloadsSection() {
 
 function DonateSection() {
   return (
-    <section id="donate" className="section" style={{ paddingTop: '1rem', paddingBottom: '3rem' }}>
+    <section id="donate" className="section" style={{ paddingTop: '3.5rem', paddingBottom: '3.5rem' }}>
       <div className="container">
         <div className="glass-card" style={{ padding: '3.5rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(236,72,153,0.08) 0%, rgba(139,92,246,0.12) 100%)', border: '1px solid rgba(236,72,153,0.25)' }}>
           <div style={{ background: 'rgba(236,72,153,0.15)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#EC4899' }}>
