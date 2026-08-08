@@ -109,7 +109,7 @@ Pre-built installers for all platforms are available on the [Releases page](http
 
 ## End User License Agreement (EULA) & Terms of Service
 
-**IMPORTANT - READ CAREFULLY:** This End User License Agreement ("EULA") is a legal agreement between you (either an individual or a single entity) and Ran Technologies ("Developer") for the SmartSweep AI software product ("SOFTWARE PRODUCT").
+**IMPORTANT - READ CAREFULLY:** This End User License Agreement ("EULA") is a legal agreement between you (either an individual or a single entity) and Ransamie Technologies ("Developer") for the SmartSweep AI software product ("SOFTWARE PRODUCT").
 
 By installing, copying, or otherwise using the SOFTWARE PRODUCT, you agree to be bound by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the SOFTWARE PRODUCT.
 
@@ -146,5 +146,5 @@ This EULA is governed by the laws of the jurisdiction in which the Developer res
 
 ## License
 
-© 2026 Ran Technologies. All rights reserved.
+© 2026 Ransamie Technologies. All rights reserved.
 

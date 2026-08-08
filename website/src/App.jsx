@@ -702,7 +702,7 @@ function App() {
             <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" className="footer-link-item">
               <Github size={16} /> GitHub
             </a>
-            <span className="footer-copy">© {new Date().getFullYear()} Ran Technologies. All rights reserved.</span>
+            <span className="footer-copy">© {new Date().getFullYear()} Ransamie Technologies. All rights reserved.</span>
           </div>
         </div>
       </footer>
