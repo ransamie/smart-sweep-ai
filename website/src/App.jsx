@@ -532,17 +532,17 @@ function App() {
             <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 32, height: 32, borderRadius: '8px', objectFit: 'contain' }} />
             <span>SmartSweep AI</span>
           </a>
-          <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="nav-links">
             <a href="#features" className="btn btn-secondary nav-link-hide-mobile">
               Features
             </a>
             <a href="#donate" className="btn btn-donate">
               <Heart size={15} fill="currentColor" />
-              Donate
+              <span className="nav-donate-text">Donate</span>
             </a>
-            <a href="#download" className="btn btn-primary">
+            <a href="#download" className="btn btn-primary nav-download-hide-hero">
               <Download size={16} />
-              Download
+              <span className="nav-download-text">Download</span>
             </a>
           </div>
         </div>

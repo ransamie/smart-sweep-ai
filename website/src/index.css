@@ -352,6 +352,12 @@ h1, h2, h3 {
   flex-shrink: 0;
 }
 
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .btn-group-responsive {
   display: flex;
   gap: 1rem;
@@ -480,6 +486,21 @@ h1, h2, h3 {
     font-size: 0.8rem !important;
     gap: 0.35rem !important;
     border-radius: 999px;
+  }
+
+  /* Unscrolled at Hero view: hide duplicate download button on mobile */
+  .navbar:not(.scrolled) .nav-download-hide-hero {
+    display: none !important;
+  }
+
+  /* Scrolled down past Hero: show compact icon-only download button */
+  .navbar.scrolled .nav-download-hide-hero {
+    display: inline-flex !important;
+    padding: 0.45rem 0.75rem !important;
+  }
+
+  .navbar.scrolled .nav-download-text {
+    display: none !important;
   }
 
   .hero-section {
