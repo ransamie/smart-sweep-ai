@@ -306,14 +306,20 @@ h1, h2, h3 {
   }
 }
 
-/* ── Mobile Responsive Overrides ────────────────────────────── */
+/* ── Mobile Responsive & Text Centering Overrides ──────────────── */
 @media (max-width: 768px) {
   .section {
-    padding: 3.5rem 0;
+    padding: 3.25rem 0;
   }
 
   .container {
-    padding: 0 1rem;
+    padding: 0 1.15rem;
+    text-align: center !important;
+  }
+
+  /* Global mobile text centering */
+  h1, h2, h3, h4, p {
+    text-align: center !important;
   }
 
   .navbar {
@@ -339,8 +345,10 @@ h1, h2, h3 {
     border-radius: 999px;
   }
 
+  /* Hero Section */
   .hero-section {
     padding-top: 5.5rem;
+    text-align: center !important;
   }
 
   .hero-buttons {
@@ -358,6 +366,114 @@ h1, h2, h3 {
     font-size: 1rem !important;
   }
 
+  /* Bento Feature Cards Centering */
+  .bento-item {
+    text-align: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .bento-item > div:first-child {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .bento-item h3,
+  .bento-item p {
+    text-align: center !important;
+  }
+
+  .bento-item ul {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    padding: 0;
+  }
+
+  .bento-item li {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* Downloads Hero Card Centering */
+  .downloads-hero {
+    text-align: center !important;
+    padding: 1.5rem 1.15rem !important;
+  }
+
+  .downloads-hero-header {
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .downloads-hero-header > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center !important;
+    text-align: center !important;
+    width: 100%;
+  }
+
+  .downloads-hero-header > div > div {
+    justify-content: center !important;
+    width: 100%;
+  }
+
+  .downloads-hero-header p {
+    text-align: center !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .downloads-hero-header a.btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+
+  /* Platform Cards Centering */
+  .platform-card {
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 1.15rem 1rem !important;
+  }
+
+  .platform-card-body {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .platform-card-label {
+    text-align: center !important;
+  }
+
+  /* Previous Releases Centering */
+  .release-row-header {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .release-row-header > div {
+    justify-content: center !important;
+    flex-wrap: wrap;
+  }
+
+  .release-row-assets {
+    justify-content: center !important;
+  }
+
+  .asset-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Flatten Mockup Frame */
   .mockup-container {
     margin-top: 1.5rem;
     perspective: none;
@@ -370,9 +486,11 @@ h1, h2, h3 {
     padding-top: 24px;
   }
 
+  /* Responsive Glass Cards & Buttons */
   .glass-card {
-    padding: 1.5rem 1.15rem !important;
-    border-radius: 1.15rem;
+    padding: 1.75rem 1.25rem !important;
+    border-radius: 1.25rem;
+    text-align: center !important;
   }
 
   .btn-group-responsive {
@@ -389,16 +507,21 @@ h1, h2, h3 {
     font-size: 1rem !important;
   }
 
+  /* Footer Mobile Centering */
   .footer-container {
     flex-direction: column;
     gap: 1.25rem;
-    text-align: center;
+    text-align: center !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .footer-links {
     flex-direction: column;
-    gap: 0.75rem !important;
-    align-items: center;
+    gap: 0.85rem !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
   }
 
   h1 {
@@ -421,11 +544,6 @@ h1, h2, h3 {
 
   .downloads-hero {
     padding: 1.25rem !important;
-  }
-
-  .downloads-hero-header {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 
