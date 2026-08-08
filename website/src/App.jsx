@@ -477,22 +477,22 @@ function DonateSection() {
             SmartSweep AI is 100% free and open-source. If this app helped you reclaim disk space and speed up your PC, consider supporting continuous development with a donation via Paystack!
           </p>
           
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="btn-group-responsive" style={{ marginTop: '0.5rem' }}>
             <a 
               href={PAYSTACK_DONATE_URL} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="btn btn-donate" 
               style={{ 
-                padding: '1rem 2.5rem', 
-                fontSize: '1.125rem',
+                padding: '0.875rem 2rem', 
+                fontSize: '1.05rem',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 boxShadow: '0 8px 30px rgba(236, 72, 153, 0.4)'
               }}
             >
-              <CreditCard size={22} />
+              <CreditCard size={20} />
               Donate via Paystack
               <ExternalLink size={16} />
             </a>
@@ -533,14 +533,14 @@ function App() {
             <span>SmartSweep AI</span>
           </a>
           <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <a href="#features" className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+            <a href="#features" className="btn btn-secondary nav-link-hide-mobile">
               Features
             </a>
-            <a href="#donate" className="btn btn-donate" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+            <a href="#donate" className="btn btn-donate">
               <Heart size={15} fill="currentColor" />
               Donate
             </a>
-            <a href="#download" className="btn btn-primary" style={{ padding: '0.5rem 1.125rem', fontSize: '0.875rem' }}>
+            <a href="#download" className="btn btn-primary">
               <Download size={16} />
               Download
             </a>
@@ -661,14 +661,14 @@ function App() {
         <DonateSection />
 
         {/* CTA Section */}
-        <section className="section" style={{ textAlign: 'center', paddingTop: 0 }}>
+        <section className="section cta-section" style={{ textAlign: 'center', paddingTop: 0 }}>
           <div className="container">
             <div className="glass-card" style={{ padding: '4rem 2rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(139,92,246,0.1) 100%)' }}>
               <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '1.5rem' }}>Ready to optimize your system?</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem', marginBottom: '2.5rem' }}>Download SmartSweep AI today and reclaim your gigabytes.</p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="#download" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.25rem' }}>
-                  <Download size={24} />
+              <div className="btn-group-responsive">
+                <a href="#download" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.125rem' }}>
+                  <Download size={22} />
                   Download Now
                 </a>
                 <a href={PAYSTACK_DONATE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-donate" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
@@ -678,7 +678,7 @@ function App() {
                   <Github size={20} /> View Source Code <ExternalLink size={16} />
                 </a>
               </div>
-              <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                 Free & Open Source · Windows, macOS & Linux
               </div>
             </div>
@@ -692,7 +692,7 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 24, height: 24, borderRadius: '6px', objectFit: 'contain' }} /> SmartSweep AI
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <div className="footer-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <a href="#donate" style={{ color: '#EC4899', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', fontWeight: 600 }}>
               <Heart size={15} fill="#EC4899" /> Support Developer
             </a>
