@@ -1,5 +1,6 @@
-appId: com.smartsweep.ai
+appId: com.ransamietechnologies.smartsweepai
 productName: SmartSweep AI
+copyright: Copyright © 2026 Ransamie Technologies
 directories:
   output: dist
   buildResources: build
@@ -11,23 +12,9 @@ win:
     - target: nsis
       arch:
         - x64
-    - target: msi
-      arch:
-        - x64
+  publisherName: Ransamie Technologies
   requestedExecutionLevel: requireAdministrator
-mac:
-  target: dmg
-  icon: build/icon.icns
-linux:
-  target:
-    - AppImage
-    - deb
-  icon: build/icon.png
-  category: Utility
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  perMachine: true
-msi:
-  oneClick: false
   perMachine: true

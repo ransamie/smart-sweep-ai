@@ -1,7 +1,7 @@
 {
   "name": "smart-sweep-ai",
   "private": true,
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Smart Sweep AI - System Optimization",
   "author": {
     "name": "Ransamie Technologies",
@@ -51,14 +51,25 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.smartechnologies.smartsweepai",
+    "appId": "com.ransamietechnologies.smartsweepai",
     "productName": "SmartSweep AI",
     "copyright": "Copyright © 2026 Ransamie Technologies",
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "dist-electron/**/*",
+      "dist-react/**/*"
+    ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.ico",
       "publisherName": "Ransamie Technologies",
       "requestedExecutionLevel": "requireAdministrator"
