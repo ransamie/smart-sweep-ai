@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, Coffee, Gift } from 'lucide-react';
 import './index.css';
 
-const PAYSTACK_DONATE_URL = 'https://paystack.com/pay/smartsweep-ai';
+const PAYSTACK_DONATE_URL = 'https://paystack.shop/pay/smartsweep-ai';
 
 // GitHub icon (not available in older lucide-react)
 const Github = ({ size = 24 }) => (
