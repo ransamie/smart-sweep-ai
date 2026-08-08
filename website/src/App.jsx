@@ -689,19 +689,20 @@ function App() {
 
       </main>
 
-      <footer style={{ borderTop: '1px solid var(--glass-border)', padding: '3rem 0', marginTop: '2rem' }}>
-        <div className="container footer-container" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 24, height: 24, borderRadius: '6px', objectFit: 'contain' }} /> SmartSweep AI
+      <footer className="footer-section">
+        <div className="container footer-container">
+          <div className="footer-brand">
+            <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 24, height: 24, borderRadius: '6px', objectFit: 'contain' }} />
+            <span>SmartSweep AI</span>
           </div>
-          <div className="footer-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            <a href="#donate" style={{ color: '#EC4899', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', fontWeight: 600 }}>
+          <div className="footer-links">
+            <a href="#donate" className="footer-link-item footer-link-donate">
               <Heart size={15} fill="#EC4899" /> Support Developer
             </a>
-            <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}>
+            <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" className="footer-link-item">
               <Github size={16} /> GitHub
             </a>
-            <span>© {new Date().getFullYear()} Ran Technologies. All rights reserved.</span>
+            <span className="footer-copy">© {new Date().getFullYear()} Ran Technologies. All rights reserved.</span>
           </div>
         </div>
       </footer>
