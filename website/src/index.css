@@ -127,6 +127,17 @@ h1, h2, h3 {
   transform: translateY(-2px);
 }
 
+.btn-donate {
+  background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);
+  color: white;
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.35);
+}
+
+.btn-donate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(236, 72, 153, 0.55);
+}
+
 /* Glass Cards */
 .glass-card {
   background: var(--glass-bg);

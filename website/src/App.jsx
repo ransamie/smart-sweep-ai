@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, Coffee, Gift } from 'lucide-react';
 import './index.css';
+
+const PAYSTACK_DONATE_URL = 'https://paystack.com/pay/smartsweep-ai';
 
 // GitHub icon (not available in older lucide-react)
 const Github = ({ size = 24 }) => (
@@ -460,6 +462,52 @@ function DownloadsSection() {
   );
 }
 
+function DonateSection() {
+  return (
+    <section id="donate" className="section" style={{ paddingTop: '1rem', paddingBottom: '3rem' }}>
+      <div className="container">
+        <div className="glass-card" style={{ padding: '3.5rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(236,72,153,0.08) 0%, rgba(139,92,246,0.12) 100%)', border: '1px solid rgba(236,72,153,0.25)' }}>
+          <div style={{ background: 'rgba(236,72,153,0.15)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#EC4899' }}>
+            <Heart size={30} fill="#EC4899" />
+          </div>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem' }}>
+            Support the <span style={{ background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Developer</span>
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', maxWidth: '640px', margin: '0 auto 2rem', lineHeight: 1.7 }}>
+            SmartSweep AI is 100% free and open-source. If this app helped you reclaim disk space and speed up your PC, consider supporting continuous development with a donation via Paystack!
+          </p>
+          
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+            <a 
+              href={PAYSTACK_DONATE_URL} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="btn btn-donate" 
+              style={{ 
+                padding: '1rem 2.5rem', 
+                fontSize: '1.125rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 8px 30px rgba(236, 72, 153, 0.4)'
+              }}
+            >
+              <CreditCard size={22} />
+              Donate via Paystack
+              <ExternalLink size={16} />
+            </a>
+          </div>
+
+          <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <span>🔒 Secure Payments Powered by Paystack</span>
+            <span>💳 Cards, Bank Transfers, USSD & Mobile Money</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -484,11 +532,15 @@ function App() {
             <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 32, height: 32, borderRadius: '8px', objectFit: 'contain' }} />
             <span>SmartSweep AI</span>
           </a>
-          <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <a href="#features" className="btn btn-secondary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
+          <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <a href="#features" className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
               Features
             </a>
-            <a href="#download" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
+            <a href="#donate" className="btn btn-donate" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
+              <Heart size={15} fill="currentColor" />
+              Donate
+            </a>
+            <a href="#download" className="btn btn-primary" style={{ padding: '0.5rem 1.125rem', fontSize: '0.875rem' }}>
               <Download size={16} />
               Download
             </a>
@@ -605,6 +657,9 @@ function App() {
         {/* Downloads Section */}
         <DownloadsSection />
 
+        {/* Support / Donate to Developer Section */}
+        <DonateSection />
+
         {/* CTA Section */}
         <section className="section" style={{ textAlign: 'center', paddingTop: 0 }}>
           <div className="container">
@@ -615,6 +670,9 @@ function App() {
                 <a href="#download" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.25rem' }}>
                   <Download size={24} />
                   Download Now
+                </a>
+                <a href={PAYSTACK_DONATE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-donate" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
+                  <Heart size={20} fill="currentColor" /> Donate via Paystack
                 </a>
                 <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ padding: '1rem 2rem', fontSize: '1.125rem' }}>
                   <Github size={20} /> View Source Code <ExternalLink size={16} />
@@ -635,6 +693,9 @@ function App() {
             <img src="/logo.png" alt="SmartSweep AI Logo" style={{ width: 24, height: 24, borderRadius: '6px', objectFit: 'contain' }} /> SmartSweep AI
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <a href="#donate" style={{ color: '#EC4899', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none', fontWeight: 600 }}>
+              <Heart size={15} fill="#EC4899" /> Support Developer
+            </a>
             <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}>
               <Github size={16} /> GitHub
             </a>
