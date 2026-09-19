@@ -492,44 +492,42 @@ function DownloadsSection() {
 
 function DonateSection() {
   return (
-    <section id="donate" className="section" style={{ paddingTop: '3.5rem', paddingBottom: '3.5rem' }}>
-      <div className="container">
-        <div className="glass-card" style={{ padding: '3.5rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(236,72,153,0.08) 0%, rgba(139,92,246,0.12) 100%)', border: '1px solid rgba(236,72,153,0.25)' }}>
-          <div style={{ background: 'rgba(236,72,153,0.15)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#EC4899' }}>
-            <Heart size={30} fill="#EC4899" />
-          </div>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem' }}>
-            Support the <span style={{ background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Developer</span>
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', maxWidth: '640px', margin: '0 auto 2rem', lineHeight: 1.7 }}>
-            SmartSweep AI is 100% free and open-source. If this app helped you reclaim disk space and speed up your PC, consider supporting continuous development with a donation via Paystack!
-          </p>
-          
-          <div className="btn-group-responsive" style={{ marginTop: '0.5rem' }}>
-            <a 
-              href={PAYSTACK_DONATE_URL} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="btn btn-donate" 
-              style={{ 
-                padding: '0.875rem 2rem', 
-                fontSize: '1.05rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                boxShadow: '0 8px 30px rgba(236, 72, 153, 0.4)'
-              }}
-            >
-              <CreditCard size={20} />
-              Donate via Paystack
-              <ExternalLink size={16} />
-            </a>
-          </div>
+    <section id="donate" className="section" style={{ paddingTop: '2rem', paddingBottom: '3.5rem', textAlign: 'center' }}>
+      <div className="container" style={{ maxWidth: '780px', margin: '0 auto' }}>
+        <div style={{ background: 'rgba(236,72,153,0.12)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: '#EC4899', border: '1px solid rgba(236,72,153,0.2)' }}>
+          <Heart size={28} fill="#EC4899" />
+        </div>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+          Support the <span style={{ background: 'linear-gradient(135deg, #EC4899 0%, #A855F7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Developer</span>
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', maxWidth: '620px', margin: '0 auto 2rem', lineHeight: 1.7 }}>
+          SmartSweep AI is 100% free and open-source. If this app helped you reclaim disk space and speed up your PC, consider supporting continuous development with a donation via Paystack!
+        </p>
+        
+        <div className="btn-group-responsive" style={{ justifyContent: 'center', marginTop: '0.5rem' }}>
+          <a 
+            href={PAYSTACK_DONATE_URL} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="btn btn-donate" 
+            style={{ 
+              padding: '0.875rem 2.25rem', 
+              fontSize: '1.05rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              boxShadow: '0 8px 30px rgba(236, 72, 153, 0.35)'
+            }}
+          >
+            <CreditCard size={20} />
+            Donate via Paystack
+            <ExternalLink size={16} />
+          </a>
+        </div>
 
-          <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <span>🔒 Secure Payments Powered by Paystack</span>
-            <span>💳 Cards, Bank Transfers, USSD & Mobile Money</span>
-          </div>
+        <div style={{ marginTop: '1.75rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <span>🔒 Secure Payments Powered by Paystack</span>
+          <span>💳 Cards, Bank Transfers, USSD & Mobile Money</span>
         </div>
       </div>
     </section>
