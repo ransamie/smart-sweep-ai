@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, Coffee, Gift } from 'lucide-react';
-import PrivacyModal from './PrivacyModal.jsx';
+import PrivacyPage from './PrivacyPage.jsx';
 import './index.css';
 
 const PAYSTACK_DONATE_URL = 'https://paystack.shop/pay/smartsweep-ai';
@@ -538,7 +538,14 @@ function DonateSection() {
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
-  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/privacy' || window.location.hash === '#privacy') {
+        return '/privacy';
+      }
+    }
+    return '/';
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -548,32 +555,43 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listen to #privacy URL hash
+  // Listen to browser navigation (back/forward) and hash changes
   useEffect(() => {
-    const checkHash = () => {
-      if (window.location.hash === '#privacy') {
-        setIsPrivacyOpen(true);
+    const handleLocationChange = () => {
+      if (window.location.pathname === '/privacy' || window.location.hash === '#privacy') {
+        setCurrentPath('/privacy');
+      } else {
+        setCurrentPath('/');
+        document.title = 'SmartSweep AI — Free PC Cleaner & System Optimizer for Windows, Mac & Linux';
       }
     };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
-  const handleOpenPrivacy = (e) => {
+  const navigateToPrivacy = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setIsPrivacyOpen(true);
-    if (window.location.hash !== '#privacy') {
-      window.history.pushState(null, '', '#privacy');
-    }
+    setCurrentPath('/privacy');
+    window.history.pushState(null, '', '/privacy');
+    window.scrollTo(0, 0);
   };
 
-  const handleClosePrivacy = () => {
-    setIsPrivacyOpen(false);
-    if (window.location.hash === '#privacy') {
-      window.history.pushState(null, '', window.location.pathname + window.location.search);
-    }
+  const navigateToHome = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setCurrentPath('/');
+    window.history.pushState(null, '', '/');
+    document.title = 'SmartSweep AI — Free PC Cleaner & System Optimizer for Windows, Mac & Linux';
+    window.scrollTo(0, 0);
   };
+
+  // Dedicated Full-Page Privacy Policy Route
+  if (currentPath === '/privacy') {
+    return <PrivacyPage onNavigateHome={navigateToHome} />;
+  }
 
   return (
     <>
@@ -739,13 +757,13 @@ function App() {
               <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span>Free & Open Source · Windows, macOS & Linux</span>
                 <span>·</span>
-                <button
-                  type="button"
-                  onClick={handleOpenPrivacy}
-                  style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', textDecoration: 'underline', font: 'inherit', padding: 0 }}
+                <a
+                  href="/privacy"
+                  onClick={navigateToPrivacy}
+                  style={{ color: '#a78bfa', textDecoration: 'underline', font: 'inherit' }}
                 >
                   Privacy Policy
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -760,14 +778,13 @@ function App() {
             <span>SmartSweep AI</span>
           </div>
           <div className="footer-links">
-            <button
-              type="button"
-              onClick={handleOpenPrivacy}
-              className="footer-link-item footer-link-privacy"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', padding: 0 }}
+            <a
+              href="/privacy"
+              onClick={navigateToPrivacy}
+              className="footer-link-item"
             >
-              <Shield size={15} /> Privacy Policy
-            </button>
+              Privacy Policy
+            </a>
             <a href="#donate" className="footer-link-item footer-link-donate">
               <Heart size={15} fill="#EC4899" /> Support Developer
             </a>
@@ -778,8 +795,6 @@ function App() {
           </div>
         </div>
       </footer>
-
-      <PrivacyModal isOpen={isPrivacyOpen} onClose={handleClosePrivacy} />
     </>
   );
 }
