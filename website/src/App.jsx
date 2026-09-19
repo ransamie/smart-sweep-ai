@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, Coffee, Gift } from 'lucide-react';
+import PrivacyModal from './PrivacyModal.jsx';
 import './index.css';
 
 const PAYSTACK_DONATE_URL = 'https://paystack.shop/pay/smartsweep-ai';
@@ -537,6 +538,7 @@ function DonateSection() {
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -545,6 +547,33 @@ function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Listen to #privacy URL hash
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash === '#privacy') {
+        setIsPrivacyOpen(true);
+      }
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
+
+  const handleOpenPrivacy = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setIsPrivacyOpen(true);
+    if (window.location.hash !== '#privacy') {
+      window.history.pushState(null, '', '#privacy');
+    }
+  };
+
+  const handleClosePrivacy = () => {
+    setIsPrivacyOpen(false);
+    if (window.location.hash === '#privacy') {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+  };
 
   return (
     <>
@@ -707,8 +736,16 @@ function App() {
                   <Github size={20} /> View Source Code <ExternalLink size={16} />
                 </a>
               </div>
-              <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                Free & Open Source · Windows, macOS & Linux
+              <div style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span>Free & Open Source · Windows, macOS & Linux</span>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={handleOpenPrivacy}
+                  style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', textDecoration: 'underline', font: 'inherit', padding: 0 }}
+                >
+                  Privacy Policy
+                </button>
               </div>
             </div>
           </div>
@@ -723,6 +760,14 @@ function App() {
             <span>SmartSweep AI</span>
           </div>
           <div className="footer-links">
+            <button
+              type="button"
+              onClick={handleOpenPrivacy}
+              className="footer-link-item footer-link-privacy"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', padding: 0 }}
+            >
+              <Shield size={15} /> Privacy Policy
+            </button>
             <a href="#donate" className="footer-link-item footer-link-donate">
               <Heart size={15} fill="#EC4899" /> Support Developer
             </a>
@@ -733,6 +778,8 @@ function App() {
           </div>
         </div>
       </footer>
+
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={handleClosePrivacy} />
     </>
   );
 }
