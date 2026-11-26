@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  HardDrive, 
-  Trash2, 
-  Settings, 
-  Shield, 
-  Zap, 
-  Loader2, 
+import {
+  LayoutDashboard,
+  HardDrive,
+  Trash2,
+  PackageX,
+  Settings,
+  Shield,
+  Zap,
+  Loader2,
   History,
   ChevronLeft,
   ChevronRight
@@ -17,12 +18,13 @@ import { useAppContext } from '@/context/AppContext';
 import packageJson from '../../package.json';
 
 export function Sidebar() {
-  const { 
-    diskSpace, 
-    selectedDrive, 
+  const {
+    diskSpace,
+    selectedDrive,
     availableDrives,
     spaceAnalyzerScanning,
     systemCleanerState,
+    appDebrisScanning,
     privacyScanning,
     smartScanning
   } = useAppContext();
@@ -46,6 +48,7 @@ export function Sidebar() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, isScanning: smartScanning },
     { name: 'Space Analyzer', path: '/scan', icon: HardDrive, isScanning: spaceAnalyzerScanning },
     { name: 'System Cleaner', path: '/system-cleaner', icon: Trash2, isScanning: systemCleanerState === 'scanning' },
+    { name: 'App Debris', path: '/debris', icon: PackageX, isScanning: appDebrisScanning },
     { name: 'Privacy Shield', path: '/privacy', icon: Shield, isScanning: privacyScanning },
     { name: 'Startup Optimizer', path: '/startup', icon: Zap, isScanning: false },
     { name: 'Activity Logs', path: '/history', icon: History, isScanning: false },
@@ -56,7 +59,7 @@ export function Sidebar() {
   const usedGbStr = diskSpace ? (diskSpace.used / 1073741824).toFixed(1) : '0';
 
   return (
-    <div 
+    <div
       className={cn(
         "h-full flex flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl transition-all duration-300 relative select-none shrink-0",
         collapsed ? "w-16 min-w-[64px] max-w-[64px]" : "w-64 min-w-[256px] max-w-[256px]"
@@ -85,9 +88,9 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
-      
+
       {/* Navigation Items */}
-      <nav className="flex-1 px-3 space-y-1.5 mt-2">
+      <nav className="flex-1 px-3 space-y-1.5 mt-2 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -100,7 +103,7 @@ export function Sidebar() {
             )}
           >
             <item.icon className="w-4 h-4 shrink-0" />
-            
+
             {!collapsed && (
               <span className="flex-1 truncate">{item.name}</span>
             )}
@@ -121,18 +124,18 @@ export function Sidebar() {
               <span className="font-medium text-foreground">{diskSpace ? `Used: ${usedGbStr} GB` : "Loading..."}</span>
             </div>
             <div className="h-2 w-full bg-muted/60 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-1000" 
-                style={{ width: diskSpace ? `${usedPercentage}%` : '0%' }} 
+              <div
+                className="h-full bg-primary transition-all duration-1000"
+                style={{ width: diskSpace ? `${usedPercentage}%` : '0%' }}
               />
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-1 py-1" title={`${driveLabel} - Used: ${usedGbStr} GB (${usedPercentage}%)`}>
             <div className="w-8 h-1.5 bg-muted/60 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-1000" 
-                style={{ width: diskSpace ? `${usedPercentage}%` : '0%' }} 
+              <div
+                className="h-full bg-primary transition-all duration-1000"
+                style={{ width: diskSpace ? `${usedPercentage}%` : '0%' }}
               />
             </div>
             <span className="text-[9px] font-bold text-muted-foreground">{usedPercentage}%</span>

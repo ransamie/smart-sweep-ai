@@ -5,8 +5,8 @@ import { Shield, Chrome, Search, RefreshCw, Layers, Globe, Power, AlertTriangle 
 import { useAppContext } from '@/context/AppContext';
 
 export function PrivacyShieldView() {
-  const { 
-    privacyResults: results, 
+  const {
+    privacyResults: results,
     setPrivacyResults: setResults,
     privacyScanning: scanning,
     setPrivacyScanning: setScanning,
@@ -26,34 +26,42 @@ export function PrivacyShieldView() {
   const [openBrowsers, setOpenBrowsers] = useState<string[]>([]);
   const [lockedWarning, setLockedWarning] = useState<string | null>(null);
 
+  const getCategoryLabel = (key: string) => {
+    switch (key.toLowerCase()) {
+      case 'chrome': return 'Google Chrome';
+      case 'edge': return 'Microsoft Edge';
+      case 'firefox': return 'Mozilla Firefox';
+      case 'brave': return 'Brave Browser';
+      case 'opera': return 'Opera & Opera GX';
+      case 'app_caches': return 'App Caches (Discord, Spotify, VS Code, Teams, Slack)';
+      default: return key;
+    }
+  };
+
   const handleScan = async () => {
     setScanning(true);
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         const scanResults = await window.electronAPI.scanBrowserPrivacy();
         setResults(scanResults);
 
-        // @ts-ignore
         if (window.electronAPI.addHistoryEntry) {
-          const categoriesFound = Object.keys(scanResults).filter(k => scanResults[k]?.totalSize > 0);
-          // @ts-ignore
+          const categoriesFound = Array.isArray(scanResults)
+            ? scanResults.filter(r => r?.totalSize > 0).map(r => getCategoryLabel(r.browser))
+            : [];
           await window.electronAPI.addHistoryEntry({
             timestamp: Date.now(),
             scanType: 'Privacy Scan',
             bytesCleaned: 0,
-            details: `Found privacy tracks & caches across ${categoriesFound.length} application groups.`
+            details: `Found browser & app caches across ${categoriesFound.length} application groups.`,
+            items: categoriesFound,
           });
         }
 
-        // Send desktop notification
-        // @ts-ignore
         if (window.electronAPI.sendNotification) {
-          // @ts-ignore
           window.electronAPI.sendNotification(
             'Privacy Scan Complete',
-            'Browser tracks, cache, and cookies scan finished.'
+            'Browser caches and site storage scan finished. Logins and bookmarks remain protected.'
           );
         }
       }
@@ -71,36 +79,26 @@ export function PrivacyShieldView() {
     try {
       if (window.electronAPI) {
         const categoriesToClean = Object.keys(options).filter(k => options[k as keyof typeof options]);
-        
-        // Automatically attempt to terminate running browser processes before cleaning
-        // @ts-ignore
+        const cleanedLabels = categoriesToClean.map(k => getCategoryLabel(k));
+
         if (window.electronAPI.closeRunningBrowsers) {
-          // @ts-ignore
           await window.electronAPI.closeRunningBrowsers(categoriesToClean);
         }
 
-        // @ts-ignore
         const res = await window.electronAPI.cleanBrowserPrivacy(categoriesToClean);
         if (res) {
           const bytesCleaned = res.bytesDeleted || 0;
-          
-          // Refresh drive volume capacity immediately after cleaning
+
           await refreshDiskSpace();
-          // @ts-ignore
-          if (window.electronAPI.setSmartMetrics) {
-            setSmartMetrics(null);
-          } else {
-            try { setSmartMetrics(null); } catch(e) {}
-          }
-          
-          // @ts-ignore
+          setSmartMetrics(null);
+
           if (window.electronAPI.addHistoryEntry) {
-            // @ts-ignore
             await window.electronAPI.addHistoryEntry({
               timestamp: Date.now(),
               scanType: 'Privacy Clean',
               bytesCleaned,
-              details: `Cleaned ${categoriesToClean.join(', ')}.`
+              details: `Cleaned caches & site storage for ${cleanedLabels.join(', ')}.`,
+              items: cleanedLabels,
             });
           }
 
@@ -125,9 +123,7 @@ export function PrivacyShieldView() {
   const handleCloseAndClean = async () => {
     setCleaning(true);
     try {
-      // @ts-ignore
       if (window.electronAPI && window.electronAPI.closeRunningBrowsers) {
-        // @ts-ignore
         await window.electronAPI.closeRunningBrowsers(openBrowsers);
       }
       setOpenBrowsers([]);
@@ -152,25 +148,15 @@ export function PrivacyShieldView() {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const getCategoryLabel = (key: string) => {
-    switch (key.toLowerCase()) {
-      case 'chrome': return 'Google Chrome';
-      case 'edge': return 'Microsoft Edge';
-      case 'firefox': return 'Mozilla Firefox';
-      case 'brave': return 'Brave Browser';
-      case 'opera': return 'Opera & Opera GX';
-      case 'app_caches': return 'App Caches (Discord, Spotify, VS Code, Teams)';
-      default: return key;
-    }
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           <Shield className="w-8 h-8 text-primary" /> Privacy Shield & App Caches
         </h2>
-        <p className="text-muted-foreground mt-1">Clean your browser tracks, multi-profile cache, site storage, and Electron app caches to reclaim storage space.</p>
+        <p className="text-muted-foreground mt-1">
+          Clean browser caches, site storage, and Electron app caches while keeping your saved logins and bookmarks protected.
+        </p>
       </div>
 
       <Card>
@@ -182,40 +168,40 @@ export function PrivacyShieldView() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="chrome" checked={options.chrome} onChange={() => toggleOption('chrome')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="chrome" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Chrome className="w-4 h-4 text-blue-500"/> Google Chrome</label>
+              <label htmlFor="chrome" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Chrome className="w-4 h-4 text-blue-500" /> Google Chrome</label>
             </div>
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="edge" checked={options.edge} onChange={() => toggleOption('edge')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="edge" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Search className="w-4 h-4 text-cyan-400"/> Microsoft Edge</label>
+              <label htmlFor="edge" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Search className="w-4 h-4 text-cyan-400" /> Microsoft Edge</label>
             </div>
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="firefox" checked={options.firefox} onChange={() => toggleOption('firefox')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="firefox" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Shield className="w-4 h-4 text-orange-500"/> Mozilla Firefox</label>
+              <label htmlFor="firefox" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Shield className="w-4 h-4 text-orange-500" /> Mozilla Firefox</label>
             </div>
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="brave" checked={options.brave} onChange={() => toggleOption('brave')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="brave" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Globe className="w-4 h-4 text-orange-400"/> Brave Browser</label>
+              <label htmlFor="brave" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Globe className="w-4 h-4 text-orange-400" /> Brave Browser</label>
             </div>
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="opera" checked={options.opera} onChange={() => toggleOption('opera')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="opera" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Globe className="w-4 h-4 text-red-500"/> Opera & Opera GX</label>
+              <label htmlFor="opera" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Globe className="w-4 h-4 text-red-500" /> Opera & Opera GX</label>
             </div>
             <div className="flex items-center space-x-3 p-3 rounded-lg border border-white/5 bg-background/50">
               <input type="checkbox" id="app_caches" checked={options.app_caches} onChange={() => toggleOption('app_caches')} className="w-5 h-5 cursor-pointer accent-primary" />
-              <label htmlFor="app_caches" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Layers className="w-4 h-4 text-purple-400"/> Desktop App Caches</label>
+              <label htmlFor="app_caches" className="flex items-center gap-2 cursor-pointer font-medium text-sm"><Layers className="w-4 h-4 text-purple-400" /> Desktop App Caches</label>
             </div>
           </div>
-          
+
           {(() => {
             const selectedCategories = Object.keys(options).filter(k => options[k as keyof typeof options]);
-            const totalSelectedCacheBytes = results
+            const totalSelectedCacheBytes = Array.isArray(results)
               ? results
                   .filter((r: any) => selectedCategories.includes(r.browser.toLowerCase()))
                   .reduce((sum: number, r: any) => sum + r.totalSize, 0)
               : 0;
             const isCleanDisabled = scanning || cleaning || !results || totalSelectedCacheBytes === 0;
 
-            const visibleResults = results 
+            const visibleResults = Array.isArray(results)
               ? results.filter((r: any) => options[r.browser.toLowerCase() as keyof typeof options] && r.totalSize > 0)
               : null;
 
@@ -241,8 +227,8 @@ export function PrivacyShieldView() {
                         <span>{openBrowsers.join(', ')} is running. Click below to close them automatically and finish cleaning all cache files.</span>
                       </div>
                     </div>
-                    <Button 
-                      onClick={handleCloseAndClean} 
+                    <Button
+                      onClick={handleCloseAndClean}
                       disabled={cleaning}
                       className="bg-amber-500 hover:bg-amber-600 text-black font-semibold text-xs gap-2 shrink-0 shadow-md"
                     >

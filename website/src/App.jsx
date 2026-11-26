@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, Coffee, Gift } from 'lucide-react';
+import { Shield, Sparkles, Download, ArrowRight, CheckCircle2, Trash2, History, ExternalLink, ChevronDown, ChevronUp, Loader2, Heart, CreditCard, HardDrive, Zap, Package } from 'lucide-react';
 import PrivacyPage from './PrivacyPage.jsx';
 import './index.css';
 
@@ -627,7 +627,7 @@ function App() {
             <div className="hero-content-wrapper">
               <div className="hero-badge">
                 <Sparkles size={16} style={{ color: 'var(--accent-primary)' }} />
-                <span>Powered by Google Gemini 2.5 AI</span>
+                <span>Local-First Optimizer · Optional Google Gemini 2.5 AI</span>
               </div>
               
               <h1 className="hero-title">
@@ -635,7 +635,7 @@ function App() {
               </h1>
               
               <p className="hero-subtitle">
-                SmartSweep AI uses advanced machine learning to safely remove junk, protect your privacy, and optimize your system.
+                Safely clean system junk and GPU shader caches, sweep browser and desktop app caches, recover quarantined files, and optimize startup speed — with optional AI insights.
               </p>
               
               <div className="hero-buttons">
@@ -676,51 +676,84 @@ function App() {
             
             <div className="bento-grid">
               
-              {/* Feature 1 */}
+              {/* Feature 1: AI System Summary */}
               <div className="bento-item bento-item-wide glass-card">
                 <div style={{ background: 'rgba(139, 92, 246, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: 'var(--accent-primary)' }}>
                   <Sparkles size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>AI System Summary</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Optional AI System Summary</h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                  Connect your Gemini API key to receive completely personalized, context-aware advice on what to clean based on your actual disk usage patterns.
+                  Works 100% locally out of the box. Connect your own Gemini API key (stored encrypted locally) for plain-English cleanup guidance with automatic path and filename sanitization.
                 </p>
                 <ul style={{ listStyle: 'none', display: 'grid', gap: '0.75rem', color: 'var(--text-secondary)' }}>
-                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} style={{ color: 'var(--accent-primary)' }}/> Context-aware deletion advice</li>
-                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} style={{ color: 'var(--accent-primary)' }}/> Safe-to-remove guarantees</li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} style={{ color: 'var(--accent-primary)' }}/> Strict local path sanitization &amp; encrypted key storage</li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle2 size={16} style={{ color: 'var(--accent-primary)' }}/> Zero cloud upload required for core scanning &amp; cleaning</li>
                 </ul>
               </div>
 
-              {/* Feature 2 */}
+              {/* Feature 2: Privacy Shield & App Caches */}
               <div className="bento-item bento-item-narrow glass-card">
                 <div style={{ background: 'rgba(59, 130, 246, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: 'var(--accent-secondary)' }}>
                   <Shield size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Privacy Shield</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Privacy Shield &amp; App Caches</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Instantly sweep away tracking files and cache across Chrome, Edge, and Firefox without losing your active logins or cookies.
+                  Clear caches and site storage across Chrome, Edge, Brave, Opera/GX, Firefox, and desktop apps (Discord, Spotify, VS Code, Teams, Slack) while protecting saved logins and bookmarks.
                 </p>
               </div>
 
-              {/* Feature 3 */}
+              {/* Feature 3: Space Analyzer (Treemap) */}
+              <div className="bento-item bento-item-half glass-card">
+                <div style={{ background: 'rgba(99, 102, 241, 0.12)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#818CF8' }}>
+                  <HardDrive size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Space Analyzer (Treemap)</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  Visualize large storage hogs on any drive with an interactive Treemap, drill down into heavy folders, and inspect unfamiliar files before moving them to Quarantine.
+                </p>
+              </div>
+
+              {/* Feature 4: System & GPU Shader Cleaner */}
               <div className="bento-item bento-item-half glass-card">
                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#EF4444' }}>
                   <Trash2 size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>System Cleaner</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>System &amp; GPU Shader Cleaner</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Instantly reclaim gigabytes of hidden system cache, temporary files, and orphaned logs that are silently hoarding your valuable storage space.
+                  Reclaim gigabytes of temporary files, Windows Update caches, crash dumps, system logs, and DirectX, NVIDIA, AMD, and Intel GPU shader caches on demand or on a daily schedule.
                 </p>
               </div>
 
-              {/* Feature 4 */}
-              <div className="bento-item bento-item-half glass-card">
+              {/* Feature 5: Startup Optimizer */}
+              <div className="bento-item bento-item-narrow glass-card">
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#10B981' }}>
+                  <Zap size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Startup Optimizer</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  Toggle auto-starting apps synced with Windows Task Manager, macOS LaunchAgents, and Linux XDG autostart to accelerate boot times.
+                </p>
+              </div>
+
+              {/* Feature 6: App Debris & Quarantine */}
+              <div className="bento-item bento-item-narrow glass-card">
+                <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#F59E0B' }}>
+                  <Package size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>App Debris &amp; Quarantine</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  Detect leftover folders from uninstalled software with strict OS protections, and restore quarantined files anytime during the 14-day recovery window.
+                </p>
+              </div>
+
+              {/* Feature 7: Exportable Activity Logs */}
+              <div className="bento-item bento-item-narrow glass-card">
                 <div style={{ background: 'rgba(34, 197, 94, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', color: '#22C55E' }}>
                   <History size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Activity Logs & History</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Exportable Activity Logs</h3>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                  Total transparency. Keep a detailed, exportable history of every single file deleted during optimization, ensuring you always know exactly what was removed.
+                  Track lifetime space freed with itemized cleanup records and one-click CSV or JSON exports for complete transparency.
                 </p>
               </div>
 

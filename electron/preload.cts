@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cleanSystemJunk: (categoryIds: string[]) => ipcRenderer.invoke('clean-system-junk', categoryIds),
   deleteFiles: (paths: string[]) => ipcRenderer.invoke('delete-files', paths),
   restoreFile: (originalPath: string) => ipcRenderer.invoke('restore-file', originalPath),
+  listQuarantine: () => ipcRenderer.invoke('list-quarantine'),
+  deleteQuarantineItem: (originalPath: string) => ipcRenderer.invoke('delete-quarantine-item', originalPath),
+  emptyQuarantine: () => ipcRenderer.invoke('empty-quarantine'),
   scanBrowserPrivacy: () => ipcRenderer.invoke('scan-browser-privacy'),
   cleanBrowserPrivacy: (browsers: string[]) => ipcRenderer.invoke('clean-browser-privacy', browsers),
   closeRunningBrowsers: (browsers: string[]) => ipcRenderer.invoke('close-running-browsers', browsers),
@@ -29,6 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   updateSettings: (settings: any) => ipcRenderer.invoke('update-settings', settings),
+  getApiKey: () => ipcRenderer.invoke('get-api-key'),
+  setApiKey: (key: string | null) => ipcRenderer.invoke('set-api-key', key),
   onNavigate: (callback: (route: string) => void) => {
     ipcRenderer.on('navigate-to', (_event: Electron.IpcRendererEvent, route: string) => callback(route));
   },

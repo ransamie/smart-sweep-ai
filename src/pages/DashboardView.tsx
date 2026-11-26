@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, HardDrive, RefreshCw, Search, Activity, Trash2, Shield, Zap, ChevronRight } from 'lucide-react';
+import { Sparkles, HardDrive, RefreshCw, Search, Activity, Trash2, Shield, Zap, ChevronRight, PackageX, History, Key } from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 
 export function DashboardView() {
-  const { 
-    apiKey, 
-    systemPaths, 
-    diskSpace, 
-    dashboardSummary: aiSummary, 
-    setDashboardSummary: setAiSummary, 
+  const {
+    apiKey,
+    diskSpace,
+    dashboardSummary: aiSummary,
+    setDashboardSummary: setAiSummary,
     deepScanResults,
     smartScanning,
     setSmartScanning,
@@ -24,45 +23,52 @@ export function DashboardView() {
   const [loadingAI, setLoadingAI] = useState(false);
   const [showFullAiModal, setShowFullAiModal] = useState(false);
 
+  const formatBytesCompact = (bytes: number) => {
+    if (!bytes || bytes <= 0) return '0 B';
+    if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`;
+    if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(0)} MB`;
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  };
+
   const runSmartScan = async (isManual = false) => {
     setSmartScanning(true);
     try {
-      // @ts-ignore
       if (window.electronAPI) {
         const [sysJunk, privData] = await Promise.all([
-          // @ts-ignore
           window.electronAPI.scanSystemJunk(),
-          // @ts-ignore
           window.electronAPI.scanBrowserPrivacy()
         ]);
 
         const sysResults = Array.isArray(sysJunk?.results) ? sysJunk.results : [];
         const junkCount = sysResults.reduce((acc: number, r: any) => acc + (r.fileCount || 0), 0);
+        const totalJunkBytes = sysResults.reduce((acc: number, r: any) => acc + (r.totalSize || 0), 0);
 
         let privacyCount = 0;
+        let totalPrivacyBytes = 0;
         if (Array.isArray(privData)) {
+          totalPrivacyBytes = privData.reduce((acc: number, b: any) => acc + (b.totalSize || 0), 0);
           // Ignore sizes under 10MB as they are usually locked active system caches, not accumulated traces
           privacyCount = privData.filter((b: any) => b.totalSize > 10 * 1024 * 1024).length;
         }
-        
-        setSmartMetrics({ junk: junkCount, privacy: privacyCount });
+
+        setSmartMetrics({
+          junk: junkCount,
+          junkBytes: totalJunkBytes,
+          privacy: privacyCount,
+          privacyBytes: totalPrivacyBytes,
+        });
 
         if (isManual) {
-          // @ts-ignore
           if (window.electronAPI.addHistoryEntry) {
-            // @ts-ignore
             await window.electronAPI.addHistoryEntry({
               timestamp: Date.now(),
               scanType: 'Smart Scan',
               bytesCleaned: 0,
-              details: `Found ${junkCount} junk files and ${privacyCount} browser privacy risks.`
+              details: `Found ${junkCount} junk files (${formatBytesCompact(totalJunkBytes)}) and ${privacyCount} browser/app cache sources (${formatBytesCompact(totalPrivacyBytes)}).`
             });
           }
 
-          // Send desktop notification
-          // @ts-ignore
           if (window.electronAPI.sendNotification) {
-            // @ts-ignore
             window.electronAPI.sendNotification(
               'Smart Scan Finished',
               `Smart Scan finished! System Health Score updated.`
@@ -78,28 +84,26 @@ export function DashboardView() {
   };
 
   const fetchSummary = async () => {
+    if (!apiKey) return;
     setLoadingAI(true);
     setAiSummary(null);
     try {
-      // @ts-ignore
       if (window.electronAPI) {
         const topFiles = deepScanResults
           ? [...deepScanResults]
               .sort((a, b) => b.size - a.size)
               .slice(0, 10)
-              .map(f => ({ path: f.path, sizeMB: (f.size / (1024*1024)).toFixed(1) }))
+              .map(f => ({ path: f.path, sizeMB: (f.size / (1024 * 1024)).toFixed(1) }))
           : [];
 
-        // @ts-ignore
-        const summary = await window.electronAPI.getAIRecommendation(apiKey, { 
+        const summary = await window.electronAPI.getAIRecommendation(apiKey, {
           totalSpace: diskSpace?.total,
           usedSpace: diskSpace?.used,
           freeSpace: diskSpace?.free,
           topFiles: topFiles.length > 0 ? topFiles : 'No space analyzer results yet. Run the Space Analyzer to get specific file advice.'
         });
-        const aiResult = summary as { error?: string } | null;
-        if (aiResult?.error) {
-          setAiSummary(aiResult.error);
+        if (typeof summary === 'object' && summary?.error) {
+          setAiSummary(summary.error);
         } else {
           setAiSummary(typeof summary === 'string' ? summary : 'Failed to fetch AI summary. Ensure your API key is valid.');
         }
@@ -118,8 +122,7 @@ export function DashboardView() {
     }
 
     void runSmartScan(false);
-    // We intentionally do not auto-fetch the AI summary on startup
-    // to save tokens and prevent unwanted API calls.
+    // Intentionally do not auto-fetch the AI summary on startup to save tokens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
@@ -154,7 +157,7 @@ export function DashboardView() {
         <Card className="w-full sm:w-72 flex-grow-0 shrink-0 flex flex-col min-w-[280px]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base font-semibold whitespace-nowrap">
-              <HardDrive className="w-5 h-5 text-primary shrink-0"/> Storage Health
+              <HardDrive className="w-5 h-5 text-primary shrink-0" /> Storage Health
             </CardTitle>
             <CardDescription className="text-xs">System Health Score</CardDescription>
           </CardHeader>
@@ -162,22 +165,26 @@ export function DashboardView() {
             {diskSpace ? (
               (() => {
                 const freePercentage = (diskSpace.free / diskSpace.total) * 100;
-                
-                // Calculate dynamic penalties
+
+                // Calculate dynamic penalties based on actual reclaimable bytes and counts
                 let privacyPenalty = 0;
                 let junkFilesPenalty = 0;
-                
+
                 if (smartMetrics) {
-                  privacyPenalty = Math.min(15, Math.floor(smartMetrics.privacy / 10)); // up to 15 points
-                  junkFilesPenalty = Math.min(25, Math.floor(smartMetrics.junk / 50)); // up to 25 points
+                  const privacyMB = (smartMetrics.privacyBytes || 0) / (1024 * 1024);
+                  privacyPenalty = Math.min(
+                    15,
+                    Math.floor(privacyMB / 50) + (smartMetrics.privacy > 0 && privacyMB < 50 ? 1 : 0)
+                  );
+                  junkFilesPenalty = Math.min(25, Math.floor(smartMetrics.junk / 50));
                 }
-                
-                const score = smartMetrics 
+
+                const score = smartMetrics
                   ? Math.max(0, Math.min(100, Math.round(freePercentage - privacyPenalty - junkFilesPenalty)))
-                  : 0; // Show 0 or a placeholder if no smart scan yet
-                
+                  : 0;
+
                 let color = 'hsl(var(--primary))';
-                if (score === 0 && !smartMetrics) color = '#888'; // Grey out if not scanned
+                if (score === 0 && !smartMetrics) color = '#888';
                 else if (score < 50) color = '#ef4444';
                 else if (score <= 80) color = '#eab308';
                 else color = '#22c55e';
@@ -185,8 +192,8 @@ export function DashboardView() {
                 return (
                   <>
                     <div className="relative w-32 h-32 flex items-center justify-center rounded-full border-[6px] border-muted overflow-hidden shrink-0 shadow-inner">
-                      <div 
-                        className="absolute inset-0 transition-all duration-1000" 
+                      <div
+                        className="absolute inset-0 transition-all duration-1000"
                         style={{ background: `conic-gradient(${color} ${score}%, transparent 0)` }}
                       />
                       <div className="absolute inset-2 bg-card rounded-full flex flex-col items-center justify-center z-10 shadow-sm">
@@ -194,7 +201,7 @@ export function DashboardView() {
                         <span className="block text-[10px] text-muted-foreground mt-0.5 font-medium tracking-wide uppercase">Health</span>
                       </div>
                     </div>
-                    
+
                     <div className="w-full space-y-3 pt-4">
                       <div className="space-y-1.5 text-xs">
                         <div className="flex items-center justify-between py-1 border-b border-border/40 gap-2">
@@ -202,12 +209,12 @@ export function DashboardView() {
                           <span className="font-semibold text-foreground font-mono shrink-0">{(diskSpace.free / 1073741824).toFixed(1)} GB</span>
                         </div>
                         <div className="flex items-center justify-between py-1 border-b border-border/40 gap-2">
-                          <span className="text-muted-foreground whitespace-nowrap">Browser Traces</span>
-                          <div className="flex items-center gap-2">
-                            <span className={smartMetrics ? (smartMetrics.privacy > 0 ? "text-amber-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
-                              {smartMetrics ? `${smartMetrics.privacy} traces` : 'Not Scanned'}
+                          <span className="text-muted-foreground whitespace-nowrap">Browser & App Caches</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={smartMetrics ? ((smartMetrics.privacyBytes || 0) > 10 * 1024 * 1024 ? "text-amber-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
+                              {smartMetrics ? formatBytesCompact(smartMetrics.privacyBytes || 0) : 'Not Scanned'}
                             </span>
-                            {smartMetrics && smartMetrics.privacy > 0 && (
+                            {smartMetrics && (smartMetrics.privacyBytes || 0) > 10 * 1024 * 1024 && (
                               <button onClick={() => navigate('/privacy')} className="text-[10px] bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-1.5 py-0.5 rounded font-medium transition-colors">
                                 Clear →
                               </button>
@@ -216,7 +223,7 @@ export function DashboardView() {
                         </div>
                         <div className="flex items-center justify-between py-1 gap-2">
                           <span className="text-muted-foreground whitespace-nowrap">Junk Files</span>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <span className={smartMetrics ? (smartMetrics.junk > 0 ? "text-red-400 font-semibold font-mono shrink-0" : "text-green-500 font-semibold font-mono shrink-0") : "text-muted-foreground shrink-0"}>
                               {smartMetrics ? `${smartMetrics.junk} files` : 'Not Scanned'}
                             </span>
@@ -247,9 +254,11 @@ export function DashboardView() {
                 <CardTitle className="flex items-center gap-2 text-primary text-base font-semibold">
                   <Sparkles className="w-4 h-4" /> AI System Summary
                 </CardTitle>
-                <CardDescription className="text-xs text-primary/70">Personalized recommendations based on your system state.</CardDescription>
+                <CardDescription className="text-xs text-primary/70">
+                  {apiKey ? 'Personalized recommendations based on your sanitized system metadata.' : 'Optional AI insights powered by your own Gemini API key.'}
+                </CardDescription>
               </div>
-              {aiSummary && (
+              {apiKey && aiSummary && (
                 <Button onClick={fetchSummary} disabled={loadingAI || !diskSpace} variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0 bg-background/50 backdrop-blur-sm rounded-full">
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingAI ? 'animate-spin' : ''}`} />
                 </Button>
@@ -257,7 +266,17 @@ export function DashboardView() {
             </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden p-4 flex flex-col justify-between">
-            {aiSummary ? (
+            {!apiKey ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-3 text-center py-6 px-4">
+                <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
+                  Local mode is active. Connect a free Gemini API key in Settings to enable optional AI cleanup recommendations.
+                </p>
+                <Button onClick={() => navigate('/settings')} size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10 text-xs">
+                  <Key className="w-3.5 h-3.5" />
+                  Connect API Key in Settings
+                </Button>
+              </div>
+            ) : aiSummary ? (
               (() => {
                 const isError = aiSummary.startsWith('AI Error') || aiSummary.includes('Quota') || aiSummary.includes('Rate Limit') || aiSummary.includes('⚠️') || aiSummary.includes('exceeded');
                 const isLong = aiSummary.length > 200;
@@ -305,28 +324,50 @@ export function DashboardView() {
       <Card className="w-full bg-card shrink-0">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" /> Quick Actions & Status
+            <Activity className="w-5 h-5 text-primary" /> Quick Actions & Modules
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/scan')}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-indigo-500/10 text-indigo-400 shrink-0"><Search className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">Space Analyzer</div>
+                  <div className="text-xs text-muted-foreground truncate">Inspect large files & treemap</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+
             <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/system-cleaner')}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 rounded-md bg-blue-500/10 text-blue-500 shrink-0"><Trash2 className="w-5 h-5" /></div>
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">System Cleaner</div>
-                  <div className="text-xs text-muted-foreground truncate">Reclaim storage space</div>
+                  <div className="text-xs text-muted-foreground truncate">Reclaim temp & shader cache</div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
-            
+
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/debris')}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-amber-500/10 text-amber-400 shrink-0"><PackageX className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">App Debris</div>
+                  <div className="text-xs text-muted-foreground truncate">Find leftover uninstalled folders</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+
             <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/privacy')}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 rounded-md bg-purple-500/10 text-purple-500 shrink-0"><Shield className="w-5 h-5" /></div>
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">Privacy Shield</div>
-                  <div className="text-xs text-muted-foreground truncate">Clear browser traces</div>
+                  <div className="text-xs text-muted-foreground truncate">Clear browser & app caches</div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -338,6 +379,17 @@ export function DashboardView() {
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">Startup Optimizer</div>
                   <div className="text-xs text-muted-foreground truncate">Improve boot time</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-accent transition-colors cursor-pointer" onClick={() => navigate('/history')}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-400 shrink-0"><History className="w-5 h-5" /></div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">Logs & Quarantine</div>
+                  <div className="text-xs text-muted-foreground truncate">Export history & recover files</div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />

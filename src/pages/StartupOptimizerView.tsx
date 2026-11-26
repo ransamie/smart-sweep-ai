@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Sparkles, RefreshCw, Power, FolderOpen, CheckCircle, XCircle } from 'lucide-react';
+import { Rocket, Sparkles, RefreshCw, Power, FolderOpen, CheckCircle, XCircle, Key } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAppContext } from '@/context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 export function StartupOptimizerView() {
-  const { 
+  const {
     apiKey,
     startupItems: items,
     setStartupItems: setItems,
     startupAnalysis: aiRecommendation,
     setStartupAnalysis: setAiRecommendation
   } = useAppContext();
-  
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [togglingNames, setTogglingNames] = useState<Set<string>>(new Set());
@@ -22,9 +24,7 @@ export function StartupOptimizerView() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         const startupItems = await window.electronAPI.getStartupItems();
         setItems(startupItems || []);
       }
@@ -37,14 +37,14 @@ export function StartupOptimizerView() {
 
   useEffect(() => {
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAnalyze = async () => {
+    if (!apiKey) return;
     setAnalyzing(true);
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         const analysis = await window.electronAPI.analyzeStartup(apiKey, items);
         setAiRecommendation(analysis);
       }
@@ -59,7 +59,6 @@ export function StartupOptimizerView() {
   const toggleItem = async (item: any) => {
     const newEnabled = !item.enabled;
 
-    // Optimistically update UI immediately
     const optimisticItems = items.map((i: any) =>
       i.name === item.name ? { ...i, enabled: newEnabled } : i
     );
@@ -67,19 +66,14 @@ export function StartupOptimizerView() {
     setTogglingNames(prev => new Set(prev).add(item.name));
 
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         await window.electronAPI.toggleStartupItem(item.name, item.location, newEnabled, item.path);
-        // Show success toast
         setToast({ name: item.name, enabled: newEnabled });
         setTimeout(() => setToast(null), 3000);
-        // Re-fetch to confirm the actual registry state
         await fetchItems();
       }
     } catch (e) {
       console.error(e);
-      // Revert optimistic update on failure
       const revertedItems = items.map((i: any) =>
         i.name === item.name ? { ...i, enabled: item.enabled } : i
       );
@@ -95,9 +89,7 @@ export function StartupOptimizerView() {
 
   const handleOpenFolder = async (filePath: string) => {
     try {
-      // @ts-ignore
       if (window.electronAPI?.showInFolder) {
-        // @ts-ignore
         await window.electronAPI.showInFolder(filePath);
       }
     } catch (e) {
@@ -111,12 +103,12 @@ export function StartupOptimizerView() {
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm font-medium backdrop-blur-md ${
-            toast.enabled 
+            toast.enabled
               ? 'bg-slate-900/95 border-emerald-500/50 text-slate-100 shadow-emerald-950/50'
               : 'bg-slate-900/95 border-amber-500/50 text-slate-100 shadow-amber-950/50'
           }`}>
-            {toast.enabled 
-              ? <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" /> 
+            {toast.enabled
+              ? <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
               : <XCircle className="w-5 h-5 shrink-0 text-amber-400" />
             }
             <span className="text-slate-100">
@@ -138,10 +130,23 @@ export function StartupOptimizerView() {
           <CardTitle className="flex items-center gap-2 text-primary">
             <Sparkles className="w-5 h-5" /> AI Recommendation
           </CardTitle>
-          <CardDescription>Get personalized advice on what to disable safely.</CardDescription>
+          <CardDescription>
+            {apiKey
+              ? 'Get personalized advice on what to disable safely.'
+              : 'Optional: Connect a Gemini API key in Settings for AI startup advice.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {aiRecommendation ? (
+          {!apiKey ? (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+              <p className="text-xs text-muted-foreground">
+                You can toggle any startup entry below locally. To analyze startup items with Gemini AI, configure an API key in Settings.
+              </p>
+              <Button onClick={() => navigate('/settings')} variant="outline" size="sm" className="gap-2 border-primary/30 text-primary hover:bg-primary/10 shrink-0">
+                <Key className="w-3.5 h-3.5" /> Configure API Key
+              </Button>
+            </div>
+          ) : aiRecommendation ? (
             <div className="prose prose-sm dark:prose-invert max-w-none text-foreground break-words [overflow-wrap:anywhere]">
               <ReactMarkdown>{aiRecommendation}</ReactMarkdown>
             </div>
@@ -185,7 +190,7 @@ export function StartupOptimizerView() {
                         </p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1.5 ml-4 truncate" title={item.path}>
-                        {item.path || 'No path'} 
+                        {item.path || 'No path'}
                         <span className="ml-2 font-mono text-[10px] opacity-60">[{item.location}]</span>
                       </p>
                     </div>
@@ -206,13 +211,13 @@ export function StartupOptimizerView() {
                         size="sm"
                         disabled={isToggling}
                         className={`gap-2 min-w-[100px] transition-all active:scale-95 ${
-                          item.enabled 
-                            ? 'hover:bg-destructive hover:text-destructive-foreground' 
+                          item.enabled
+                            ? 'hover:bg-destructive hover:text-destructive-foreground'
                             : 'hover:bg-primary hover:text-primary-foreground'
                         }`}
                         onClick={() => toggleItem(item)}
                       >
-                        {isToggling 
+                        {isToggling
                           ? <RefreshCw className="w-4 h-4 animate-spin" />
                           : <Power className="w-4 h-4" />
                         }

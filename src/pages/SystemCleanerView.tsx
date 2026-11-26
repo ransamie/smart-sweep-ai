@@ -3,27 +3,6 @@ import { Loader2, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, Search } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SelectionFooter } from '@/components/SelectionFooter';
-
-export interface CleanerCategory {
-  id: string;
-  name: string;
-  description: string;
-  paths: string[];
-}
-
-export interface CleanerResult {
-  categoryId: string;
-  fileCount: number;
-  totalSize: number;
-}
-
-type ScanState = 'idle' | 'scanning' | 'done';
-
-interface CategoryResult {
-  category: CleanerCategory;
-  result: CleanerResult;
-}
-
 import { useAppContext } from '@/context/AppContext';
 
 export function SystemCleanerView() {
@@ -40,17 +19,16 @@ export function SystemCleanerView() {
   const [cleaning, setCleaning] = useState(false);
   const [cleaned, setCleaned] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
 
   const runScan = async () => {
     setScanState('scanning');
     setSelected(new Set());
     setError(null);
     setCleaned(false);
-    
+
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         const response = await window.electronAPI.scanSystemJunk();
         if (response.error) {
           setError(response.error);
@@ -61,14 +39,11 @@ export function SystemCleanerView() {
             category: catMap.get(r.categoryId),
             result: r
           })).filter((c: any) => c.category);
-          
+
           setCategories(combined);
-          // Auto-select all by default
           setSelected(new Set(combined.map((c: any) => c.category.id)));
 
-          // @ts-ignore
           if (window.electronAPI.addHistoryEntry) {
-            // @ts-ignore
             await window.electronAPI.addHistoryEntry({
               timestamp: Date.now(),
               scanType: 'System Scan',
@@ -77,10 +52,7 @@ export function SystemCleanerView() {
             });
           }
 
-          // Send desktop notification
-          // @ts-ignore
           if (window.electronAPI.sendNotification) {
-            // @ts-ignore
             window.electronAPI.sendNotification(
               'System Scan Complete',
               `System Scan complete! Found ${combined.length} categories of junk files.`
@@ -97,43 +69,36 @@ export function SystemCleanerView() {
     }
   };
 
-  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
-
   const runClean = async () => {
     if (selected.size === 0) return;
     setCleaning(true);
     setLockedNotice(null);
-    
+
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
-        const res = await window.electronAPI.cleanSystemJunk(Array.from(selected));
+        const selectedIds = Array.from(selected);
+        const cleanedItems = categories
+          .filter(c => selected.has(c.category.id) && c.result.fileCount > 0)
+          .map(c => `${c.category.name} (${c.result.fileCount} files)`);
+
+        const res = await window.electronAPI.cleanSystemJunk(selectedIds);
         if (res?.error) {
           setError(res.error);
         } else {
           setCleaned(true);
-          
-          const bytesCleaned = res.bytesDeleted || 0;
-          
-          // Refresh drive volume capacity immediately after cleaning
-          await refreshDiskSpace();
-          // @ts-ignore
-          if (window.electronAPI.setSmartMetrics) {
-            setSmartMetrics(null);
-          } else {
-            // Fallback for context
-            try { setSmartMetrics(null); } catch(e) {}
-          }
 
-          // @ts-ignore
+          const bytesCleaned = res.bytesDeleted || 0;
+
+          await refreshDiskSpace();
+          setSmartMetrics(null);
+
           if (window.electronAPI.addHistoryEntry) {
-            // @ts-ignore
             await window.electronAPI.addHistoryEntry({
               timestamp: Date.now(),
               scanType: 'System Clean',
               bytesCleaned,
-              details: `Cleaned ${selected.size} categories.`
+              details: `Cleaned ${cleanedItems.length || selected.size} categories.`,
+              items: cleanedItems,
             });
           }
 
@@ -189,7 +154,7 @@ export function SystemCleanerView() {
   const hasJunk = categories.some(c => c.result.fileCount > 0);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -307,7 +272,7 @@ export function SystemCleanerView() {
                 const { category, result } = c;
                 if (result.fileCount === 0) return null;
 
-                const isLarge = result.totalSize > 500 * 1024 * 1024; // > 500MB
+                const isLarge = result.totalSize > 500 * 1024 * 1024;
 
                 return (
                   <div
@@ -324,19 +289,19 @@ export function SystemCleanerView() {
                         onClick={e => e.stopPropagation()}
                       />
                     </div>
-                    
+
                     <div className="ml-4 flex items-center justify-center w-10 h-10 rounded-full bg-background border shrink-0">
                       {isLarge ? (
                         <div className="w-full h-full rounded-full border-[3px] border-red-500 flex items-center justify-center bg-red-500/10">
-                           <AlertTriangle className="w-4 h-4 text-red-500" />
+                          <AlertTriangle className="w-4 h-4 text-red-500" />
                         </div>
                       ) : (
                         <div className="w-full h-full rounded-full border-[3px] border-primary flex items-center justify-center bg-primary/10">
-                           <div className="w-3 h-3 rounded-full bg-primary" />
+                          <div className="w-3 h-3 rounded-full bg-primary" />
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="ml-4 flex-1 min-w-0">
                       <p className="text-sm font-semibold leading-none text-foreground">
                         {category.name}

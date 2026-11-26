@@ -3,14 +3,15 @@ import electronUpdaterPkg from 'electron-updater';
 const { autoUpdater } = electronUpdaterPkg;
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { statfs, readdir } from 'fs/promises';
-import { scanDirectory, deleteFiles, restoreFile } from './scanner.js';
+import { statfs, readdir, rm, readFile, unlink } from 'fs/promises';
+import { scanDirectory, deleteFiles, restoreFile, listQuarantinedFiles, deleteQuarantinedFile, emptyQuarantine, } from './scanner.js';
 import { getInstalledApps } from './registry.js';
+import { scanAppDebris, findDebrisForAppNames } from './appDebris.js';
 import { generateCleanupAdvice, validateApiKey, analyzeStartup, explainPath, clearAiCache } from './ai.js';
 import { scanBrowserPrivacy, cleanBrowserPrivacy, closeRunningBrowsers } from './browser.js';
 import { getStartupItems, toggleStartupItem } from './startup.js';
 import { scanSystemJunk, cleanSystemJunk, SYSTEM_CATEGORIES } from './systemCleaner.js';
-import { getSettings, updateSettings } from './settings.js';
+import { getSettings, updateSettings, getStoredApiKey, setStoredApiKey } from './settings.js';
 import { getHistory, clearHistory, addHistoryEntry } from './history.js';
 import * as os from 'os';
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +24,17 @@ let splashStartTime = 0;
 const MIN_SPLASH_MS = 5000;
 let lastInstalledApps = [];
 let lastCleanupRunDate = '';
+function syncLoginItemSettings(enabled) {
+    try {
+        app.setLoginItemSettings({
+            openAtLogin: enabled,
+            args: enabled ? ['--hidden'] : [],
+        });
+    }
+    catch (err) {
+        console.warn('Failed to update login item settings:', err);
+    }
+}
 // ─── Scheduled Cleanup ─────────────────────────────────────────
 function startScheduledCleanupCheck() {
     // Check every minute
@@ -53,11 +65,16 @@ function startScheduledCleanupCheck() {
                     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
                 };
                 const cleanedStr = formatBytes(totalBytes);
+                const catMap = new Map(SYSTEM_CATEGORIES.map(c => [c.id, c.name]));
+                const cleanedItems = scanResults
+                    .filter(r => r.fileCount > 0)
+                    .map(r => `${catMap.get(r.categoryId) || r.categoryId} (${r.fileCount} files)`);
                 await addHistoryEntry({
                     timestamp: Date.now(),
                     scanType: 'Auto System Cleanup',
                     bytesCleaned: totalBytes,
-                    details: 'Scheduled background cleanup.'
+                    details: 'Scheduled background cleanup.',
+                    items: cleanedItems,
                 });
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.webContents.send('auto-cleanup-completed', {
@@ -112,9 +129,11 @@ function createSplashWindow() {
     splashWindow.on('closed', () => { splashWindow = null; });
 }
 function createWindow() {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
         if (mainWindow.isMinimized())
             mainWindow.restore();
+        if (!mainWindow.isVisible())
+            revealMainWindow();
         mainWindow.focus();
         return;
     }
@@ -169,7 +188,7 @@ function createWindow() {
         splashClosed = true;
         sendSplashProgress(100, 'Ready!');
         const elapsed = Date.now() - splashStartTime;
-        const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+        const remaining = splashStartTime > 0 ? Math.max(0, MIN_SPLASH_MS - elapsed) : 0;
         setTimeout(() => {
             if (splashWindow && !splashWindow.isDestroyed()) {
                 splashWindow.webContents.send('splash-close');
@@ -204,6 +223,7 @@ function revealMainWindow() {
         return;
     }
     mainWindow.show();
+    mainWindow.focus();
     // Soft fade-in over 200 ms
     let opacity = 0;
     const step = () => {
@@ -237,6 +257,7 @@ function createTray() {
         { type: 'separator' },
         { label: 'Space Analyzer', click: () => triggerNavigation('/scan') },
         { label: 'System Cleaner', click: () => triggerNavigation('/system-cleaner') },
+        { label: 'App Debris', click: () => triggerNavigation('/debris') },
         { label: 'Privacy Shield', click: () => triggerNavigation('/privacy') },
         { type: 'separator' },
         { label: 'Quit', click: () => {
@@ -247,7 +268,7 @@ function createTray() {
     ]);
     tray.setToolTip('SmartSweep AI');
     tray.setContextMenu(contextMenu);
-    tray.on('double-click', () => createWindow());
+    tray.on('double-click', () => triggerNavigation('/'));
 }
 async function runBackgroundScan() {
     try {
@@ -278,69 +299,72 @@ async function cleanupQuarantine() {
             if (entry.name.endsWith('.meta.json')) {
                 const metaPath = path.join(QUARANTINE_DIR, entry.name);
                 try {
-                    const { readFile, unlink } = await import('fs/promises');
                     const content = await readFile(metaPath, 'utf-8');
                     const meta = JSON.parse(content);
                     if (now - meta.quarantinedAt > FOURTEEN_DAYS_MS) {
-                        // Delete the metadata and the quarantined file
+                        // Delete the metadata and the quarantined file or folder
                         const qFile = path.join(QUARANTINE_DIR, entry.name.replace('.meta.json', ''));
-                        await unlink(qFile).catch(() => { });
+                        await rm(qFile, { recursive: true, force: true }).catch(() => { });
                         await unlink(metaPath).catch(() => { });
                     }
                 }
-                catch (e) { }
+                catch { }
             }
         }
     }
-    catch (e) {
+    catch {
         // Quarantine dir might not exist yet
     }
 }
 async function checkOrphanedApps() {
     try {
         const currentAppsInfo = await getInstalledApps();
-        const currentApps = currentAppsInfo.map((a) => a.displayName);
+        const currentApps = currentAppsInfo.map((a) => a.displayName).filter(Boolean);
         if (lastInstalledApps.length > 0) {
-            const uninstalledApps = lastInstalledApps.filter(app => !currentApps.includes(app));
-            for (const appName of uninstalledApps) {
-                // We simulate finding debris for demonstration
-                const notification = new Notification({
-                    title: 'SmartSweep AI',
-                    body: `We found leftover files from ${appName}. Would you like to clean them up?`
-                });
-                notification.on('click', () => createWindow());
-                notification.show();
+            const uninstalledApps = lastInstalledApps.filter(appName => !currentApps.includes(appName));
+            if (uninstalledApps.length > 0) {
+                const matchedDebris = await findDebrisForAppNames(uninstalledApps);
+                if (matchedDebris.length > 0) {
+                    const totalBytes = matchedDebris.reduce((acc, item) => acc + item.size, 0);
+                    const mb = (totalBytes / (1024 * 1024)).toFixed(1);
+                    const notification = new Notification({
+                        title: 'SmartSweep AI — App Debris Detected',
+                        body: `Found ${matchedDebris.length} leftover folder(s) (${mb} MB) from recently uninstalled apps. Click to review.`
+                    });
+                    notification.on('click', () => triggerNavigation('/debris'));
+                    notification.show();
+                }
             }
         }
         lastInstalledApps = currentApps;
     }
     catch (err) {
-        console.error('Registry check failed', err);
+        console.error('Orphaned app debris check failed', err);
     }
 }
 app.whenReady().then(async () => {
     if (process.platform === 'win32') {
-        app.setAppUserModelId('com.rantechnologies.smartsweepai');
+        app.setAppUserModelId('com.ransamietechnologies.smartsweepai');
     }
     autoUpdater.checkForUpdatesAndNotify();
     cleanupQuarantine();
-    // Register app to start with Windows
-    app.setLoginItemSettings({
-        openAtLogin: true,
-        args: ['--hidden']
-    });
-    // 1. Splash appears immediately
-    createSplashWindow();
-    sendSplashProgress(15, 'Starting core services…');
-    // 2. Tray
+    const settings = await getSettings();
+    syncLoginItemSettings(settings.launchAtStartup);
+    const isHiddenLaunch = process.argv.includes('--hidden');
+    // Always create Tray so background monitoring & silent launch remain accessible
     createTray();
-    sendSplashProgress(30, 'Setting up system tray…');
-    // 3. Main window (hidden)
-    createWindow();
-    sendSplashProgress(45, 'Preparing main interface…');
-    // 4. Initialize baseline apps list silently
+    if (!isHiddenLaunch) {
+        // 1. Splash appears immediately
+        createSplashWindow();
+        sendSplashProgress(15, 'Starting core services…');
+        sendSplashProgress(30, 'Setting up system tray…');
+        // 2. Main window (hidden until splash finishes)
+        createWindow();
+        sendSplashProgress(45, 'Preparing main interface…');
+    }
+    // Initialize baseline apps list silently
     const initialApps = await getInstalledApps();
-    lastInstalledApps = initialApps.map((a) => a.displayName);
+    lastInstalledApps = initialApps.map((a) => a.displayName).filter(Boolean);
     // Background Timers
     // 1. Threshold-Based Scan (Every 3 Hours = 3 * 60 * 60 * 1000)
     setInterval(runBackgroundScan, 10800000);
@@ -390,6 +414,9 @@ ipcMain.handle('clean-browser-privacy', async (_, browsers) => {
 });
 ipcMain.handle('delete-files', async (_, paths) => await deleteFiles(paths));
 ipcMain.handle('restore-file', async (_, originalPath) => await restoreFile(originalPath));
+ipcMain.handle('list-quarantine', async () => await listQuarantinedFiles());
+ipcMain.handle('delete-quarantine-item', async (_, originalPath) => await deleteQuarantinedFile(originalPath));
+ipcMain.handle('empty-quarantine', async () => await emptyQuarantine());
 ipcMain.handle('get-startup-items', async () => await getStartupItems());
 ipcMain.handle('toggle-startup-item', async (_, name, location, enable, itemPath) => await toggleStartupItem(name, location, enable, itemPath));
 ipcMain.handle('analyze-startup', async (_, apiKey, items) => await analyzeStartup(apiKey, items));
@@ -442,18 +469,24 @@ autoUpdater.on('update-downloaded', (info) => {
 ipcMain.handle('restart-and-install', () => {
     autoUpdater.quitAndInstall(false, true);
 });
-// --- Settings IPC ---
+// --- Settings & Secure Secrets IPC ---
 ipcMain.handle('get-settings', async () => {
     return await getSettings();
 });
 ipcMain.handle('update-settings', async (_, newSettings) => {
-    return await updateSettings(newSettings);
+    const updated = await updateSettings(newSettings);
+    if (newSettings && typeof newSettings.launchAtStartup === 'boolean') {
+        syncLoginItemSettings(updated.launchAtStartup);
+    }
+    return updated;
+});
+ipcMain.handle('get-api-key', async () => {
+    return await getStoredApiKey();
+});
+ipcMain.handle('set-api-key', async (_, key) => {
+    return await setStoredApiKey(key);
 });
 // --- General API ---
-ipcMain.handle('get-os-info', () => {
-    if (mainWindow && !mainWindow.isDestroyed())
-        mainWindow.close();
-});
 ipcMain.handle('window-close', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.hide();
@@ -503,7 +536,7 @@ ipcMain.handle('clean-system-junk', async (_, categoryIds) => {
         return { error: error.message };
     }
 });
-ipcMain.handle('scan-directory', async (event, dirPath) => {
+ipcMain.handle('scan-directory', async (_event, dirPath) => {
     try {
         return await scanDirectory(dirPath, false); // Foreground mode
     }
@@ -521,7 +554,7 @@ ipcMain.handle('get-installed-apps', async () => {
         return { error: error.message };
     }
 });
-ipcMain.handle('get-ai-recommendation', async (event, apiKey, scanData) => {
+ipcMain.handle('get-ai-recommendation', async (_event, apiKey, scanData) => {
     try {
         return await generateCleanupAdvice(apiKey, scanData);
     }
@@ -534,7 +567,7 @@ ipcMain.handle('clear-ai-cache', () => {
     clearAiCache();
     return { success: true };
 });
-ipcMain.handle('validate-api-key', async (event, apiKey) => {
+ipcMain.handle('validate-api-key', async (_event, apiKey) => {
     return await validateApiKey(apiKey);
 });
 ipcMain.handle('get-system-paths', () => {
@@ -545,7 +578,7 @@ ipcMain.handle('get-system-paths', () => {
         downloads: app.getPath('downloads'),
     };
 });
-ipcMain.handle('get-disk-space', async (event, drivePath) => {
+ipcMain.handle('get-disk-space', async (_event, drivePath) => {
     try {
         const targetPath = drivePath || (os.platform() === 'win32' ? 'C:\\' : '/');
         const stats = await statfs(targetPath);
@@ -564,51 +597,7 @@ ipcMain.handle('get-disk-space', async (event, drivePath) => {
 });
 ipcMain.handle('get-orphaned-data', async () => {
     try {
-        const platform = os.platform();
-        let searchDirs = [];
-        if (platform === 'win32') {
-            const roamingPath = app.getPath('appData');
-            const localPath = path.join(app.getPath('appData'), '..', 'Local');
-            searchDirs = [roamingPath, localPath];
-        }
-        else if (platform === 'darwin') {
-            searchDirs = [
-                path.join(os.homedir(), 'Library', 'Application Support'),
-            ];
-        }
-        else {
-            // Linux
-            searchDirs = [
-                path.join(os.homedir(), '.local', 'share'),
-            ];
-        }
-        const readFolders = async (dirPath) => {
-            try {
-                const entries = await readdir(dirPath, { withFileTypes: true });
-                return entries
-                    .filter(e => e.isDirectory())
-                    .map(e => ({ folderName: e.name, folderPath: path.join(dirPath, e.name) }));
-            }
-            catch {
-                return [];
-            }
-        };
-        const folderResults = await Promise.all(searchDirs.map(d => readFolders(d)));
-        const allFolders = folderResults.flat();
-        // Get installed app names
-        const installedAppsInfo = await getInstalledApps();
-        const installedNames = installedAppsInfo
-            .map((a) => (a.displayName || '').toLowerCase())
-            .filter((n) => n.length > 0);
-        const orphaned = allFolders.filter(({ folderName }) => {
-            const folderLower = folderName.toLowerCase();
-            return !installedNames.some(appName => appName.includes(folderLower) || folderLower.includes(appName));
-        });
-        return orphaned.slice(0, 20).map(({ folderName, folderPath }) => ({
-            folderName,
-            folderPath,
-            sizeEstimate: 'Unknown',
-        }));
+        return await scanAppDebris();
     }
     catch (error) {
         console.error('Orphaned data scan error:', error);

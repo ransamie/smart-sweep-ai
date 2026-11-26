@@ -1,8 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { AppDebrisItem, AppSettings, DriveInfo } from '@/types/electron';
+
+const ONBOARDING_STORAGE_KEY = 'smartsweep_onboarding_completed';
+const LEGACY_API_STORAGE_KEY = 'gemini_api_key';
+
+export interface SmartMetrics {
+  junk: number;
+  junkBytes?: number;
+  privacy: number;
+  privacyBytes?: number;
+}
 
 interface AppState {
   apiKey: string | null;
   setApiKey: (key: string | null) => void;
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => void;
+  isAuthInitialized: boolean;
+
   isScanning: boolean;
   setIsScanning: (scanning: boolean) => void;
   scanResults: any;
@@ -11,12 +26,12 @@ interface AppState {
   diskSpace: { total: number; free: number; used: number } | null;
   selectedDrive: string;
   setSelectedDrive: (drive: string) => void;
-  availableDrives: Array<{ letter: string; root: string; label: string; total: number; free: number; used: number }>;
+  availableDrives: DriveInfo[];
   refreshDiskSpace: () => Promise<void>;
-  
+
   dashboardSummary: string | null;
   setDashboardSummary: (s: string | null) => void;
-  
+
   deepScanResults: any[];
   setDeepScanResults: (r: any[]) => void;
   deepScanExplanation: string | null;
@@ -31,6 +46,11 @@ interface AppState {
   systemCleanerCategories: any[];
   setSystemCleanerCategories: (c: any[]) => void;
 
+  appDebrisResults: AppDebrisItem[];
+  setAppDebrisResults: (items: AppDebrisItem[]) => void;
+  appDebrisScanning: boolean;
+  setAppDebrisScanning: (b: boolean) => void;
+
   privacyResults: any;
   setPrivacyResults: (r: any) => void;
   privacyScanning: boolean;
@@ -38,28 +58,38 @@ interface AppState {
 
   smartScanning: boolean;
   setSmartScanning: (b: boolean) => void;
-  smartMetrics: { junk: number; privacy: number } | null;
-  setSmartMetrics: (m: { junk: number; privacy: number } | null) => void;
+  smartMetrics: SmartMetrics | null;
+  setSmartMetrics: (m: SmartMetrics | null) => void;
 
   startupItems: any[];
   setStartupItems: (i: any[]) => void;
   startupAnalysis: string | null;
   setStartupAnalysis: (a: string | null) => void;
 
-  automationSettings: { scheduledCleanupEnabled: boolean; scheduledCleanupTime: string } | null;
-  setAutomationSettings: (settings: { scheduledCleanupEnabled: boolean; scheduledCleanupTime: string }) => void;
+  automationSettings: AppSettings | null;
+  setAutomationSettings: (settings: Partial<AppSettings>) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('gemini_api_key'));
+  const [apiKey, setApiKeyState] = useState<string | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(() => {
+    return (
+      localStorage.getItem(ONBOARDING_STORAGE_KEY) === 'true' ||
+      Boolean(localStorage.getItem(LEGACY_API_STORAGE_KEY))
+    );
+  });
+  const [isAuthInitialized, setIsAuthInitialized] = useState<boolean>(() => {
+    return typeof window === 'undefined' || !window.electronAPI?.getApiKey;
+  });
+
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState(null);
   const [systemPaths, setSystemPaths] = useState<any>(null);
   const [diskSpace, setDiskSpace] = useState<{ total: number; free: number; used: number } | null>(null);
   const [selectedDrive, setSelectedDrive] = useState<string>('C:\\');
-  const [availableDrives, setAvailableDrives] = useState<Array<{ letter: string; root: string; label: string; total: number; free: number; used: number }>>([]);
+  const [availableDrives, setAvailableDrives] = useState<DriveInfo[]>([]);
 
   const [dashboardSummary, setDashboardSummary] = useState<string | null>(null);
   const [deepScanResults, setDeepScanResults] = useState<any[]>([]);
@@ -70,30 +100,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [systemCleanerState, setSystemCleanerState] = useState<'idle' | 'scanning' | 'done'>('idle');
   const [systemCleanerCategories, setSystemCleanerCategories] = useState<any[]>([]);
 
+  const [appDebrisResults, setAppDebrisResults] = useState<AppDebrisItem[]>([]);
+  const [appDebrisScanning, setAppDebrisScanning] = useState(false);
+
   const [privacyResults, setPrivacyResults] = useState<any>(null);
   const [privacyScanning, setPrivacyScanning] = useState(false);
 
   const [smartScanning, setSmartScanning] = useState(false);
-  const [smartMetrics, setSmartMetrics] = useState<{ junk: number; privacy: number } | null>(null);
+  const [smartMetrics, setSmartMetrics] = useState<SmartMetrics | null>(null);
 
   const [startupItems, setStartupItems] = useState<any[]>([]);
   const [startupAnalysis, setStartupAnalysis] = useState<string | null>(null);
 
-  const [automationSettings, setAutomationSettingsState] = useState<{ scheduledCleanupEnabled: boolean; scheduledCleanupTime: string } | null>(null);
+  const [automationSettings, setAutomationSettingsState] = useState<AppSettings | null>(null);
+
+  const completeOnboarding = useCallback(() => {
+    setHasCompletedOnboarding(true);
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    if (window.electronAPI?.updateSettings) {
+      window.electronAPI.updateSettings({ hasCompletedOnboarding: true }).catch(console.error);
+    }
+  }, []);
+
+  const setApiKey = useCallback((key: string | null) => {
+    const normalized = key && key.trim() ? key.trim() : null;
+    setApiKeyState(normalized);
+
+    // Never persist plaintext API keys in localStorage
+    localStorage.removeItem(LEGACY_API_STORAGE_KEY);
+
+    if (normalized) {
+      setHasCompletedOnboarding(true);
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+      if (window.electronAPI?.updateSettings) {
+        window.electronAPI.updateSettings({ hasCompletedOnboarding: true }).catch(console.error);
+      }
+    }
+
+    if (window.electronAPI?.setApiKey) {
+      window.electronAPI.setApiKey(normalized).catch(console.error);
+    }
+
+    // Clear old AI cached summary and advice whenever API key changes
+    setDashboardSummary(null);
+    setStartupAnalysis(null);
+    setDeepScanExplanation(null);
+    if (window.electronAPI?.clearAiCache) {
+      window.electronAPI.clearAiCache().catch(console.error);
+    }
+  }, []);
 
   const refreshDiskSpace = useCallback(async () => {
-    // @ts-ignore
     if (window.electronAPI) {
       try {
-        // @ts-ignore
         if (window.electronAPI.getDrives) {
-          // @ts-ignore
           const drives = await window.electronAPI.getDrives();
           if (Array.isArray(drives)) setAvailableDrives(drives);
         }
-        // @ts-ignore
         if (window.electronAPI.getDiskSpace) {
-          // @ts-ignore
           const space = await window.electronAPI.getDiskSpace(selectedDrive);
           if (space && !space.error) {
             setDiskSpace(space);
@@ -105,45 +169,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [selectedDrive]);
 
-  const setAutomationSettings = (settings: { scheduledCleanupEnabled: boolean; scheduledCleanupTime: string }) => {
-    setAutomationSettingsState(settings);
-    // @ts-ignore
+  const setAutomationSettings = useCallback((settings: Partial<AppSettings>) => {
+    setAutomationSettingsState(prev => ({
+      scheduledCleanupEnabled: prev?.scheduledCleanupEnabled ?? true,
+      scheduledCleanupTime: prev?.scheduledCleanupTime ?? '18:00',
+      launchAtStartup: prev?.launchAtStartup ?? true,
+      hasCompletedOnboarding: prev?.hasCompletedOnboarding ?? hasCompletedOnboarding,
+      ...settings,
+    }));
     if (window.electronAPI?.updateSettings) {
-      // @ts-ignore
       window.electronAPI.updateSettings(settings).catch(console.error);
     }
-  };
+  }, [hasCompletedOnboarding]);
 
   useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('gemini_api_key', apiKey);
-    } else {
-      localStorage.removeItem('gemini_api_key');
-    }
-    // Clear old AI cached summary and advice whenever API key changes
-    setDashboardSummary(null);
-    setStartupAnalysis(null);
-    setDeepScanExplanation(null);
-    // @ts-ignore
-    if (window.electronAPI?.clearAiCache) {
-      // @ts-ignore
-      window.electronAPI.clearAiCache();
-    }
-  }, [apiKey]);
+    let active = true;
 
-  useEffect(() => {
-    // @ts-ignore
-    if (window.electronAPI) {
-      // @ts-ignore
-      window.electronAPI.getSystemPaths().then(setSystemPaths);
+    async function initElectronState() {
+      if (!window.electronAPI) {
+        setIsAuthInitialized(true);
+        return;
+      }
 
-      // Fetch automation settings
-      // @ts-ignore
-      if (window.electronAPI.getSettings) {
-        // @ts-ignore
-        window.electronAPI.getSettings().then(setAutomationSettingsState).catch(console.error);
+      try {
+        // 1. Load system paths and settings
+        const [pathsRes, settingsRes] = await Promise.all([
+          window.electronAPI.getSystemPaths?.().catch(() => null),
+          window.electronAPI.getSettings?.().catch(() => null),
+        ]);
+
+        if (!active) return;
+
+        if (pathsRes) setSystemPaths(pathsRes);
+        if (settingsRes) {
+          setAutomationSettingsState(settingsRes);
+          if (settingsRes.hasCompletedOnboarding) {
+            setHasCompletedOnboarding(true);
+            localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+          }
+        }
+
+        // 2. Load encrypted API key and migrate any legacy plaintext localStorage key
+        const legacyKey = localStorage.getItem(LEGACY_API_STORAGE_KEY);
+        const storedKey = window.electronAPI.getApiKey
+          ? await window.electronAPI.getApiKey().catch(() => null)
+          : null;
+
+        if (!active) return;
+
+        if (storedKey) {
+          setApiKeyState(storedKey);
+          setHasCompletedOnboarding(true);
+          localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+          if (legacyKey) {
+            localStorage.removeItem(LEGACY_API_STORAGE_KEY);
+          }
+        } else if (legacyKey && legacyKey.trim()) {
+          const migratedKey = legacyKey.trim();
+          if (window.electronAPI.setApiKey) {
+            await window.electronAPI.setApiKey(migratedKey).catch(console.error);
+          }
+          localStorage.removeItem(LEGACY_API_STORAGE_KEY);
+          setApiKeyState(migratedKey);
+          setHasCompletedOnboarding(true);
+          localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+          window.electronAPI.updateSettings?.({ hasCompletedOnboarding: true }).catch(console.error);
+        } else if (legacyKey !== null) {
+          localStorage.removeItem(LEGACY_API_STORAGE_KEY);
+        }
+      } catch (e) {
+        console.error('Failed to initialize app state:', e);
+      } finally {
+        if (active) {
+          setIsAuthInitialized(true);
+        }
       }
     }
+
+    initElectronState();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -158,6 +265,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       apiKey, setApiKey,
+      hasCompletedOnboarding, completeOnboarding, isAuthInitialized,
       isScanning, setIsScanning,
       scanResults, setScanResults,
       systemPaths, diskSpace,
@@ -170,6 +278,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       spaceAnalyzerProgress, setSpaceAnalyzerProgress,
       systemCleanerState, setSystemCleanerState,
       systemCleanerCategories, setSystemCleanerCategories,
+      appDebrisResults, setAppDebrisResults,
+      appDebrisScanning, setAppDebrisScanning,
       privacyResults, setPrivacyResults,
       privacyScanning, setPrivacyScanning,
       smartScanning, setSmartScanning,

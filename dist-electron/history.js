@@ -13,19 +13,24 @@ export async function getHistory() {
         const data = await fs.readFile(getHistoryPath(), 'utf-8');
         return JSON.parse(data);
     }
-    catch (error) {
+    catch {
         return [];
     }
 }
 export async function addHistoryEntry(entry) {
     const currentHistory = await getHistory();
+    const cappedItems = Array.isArray(entry.items)
+        ? entry.items.filter(Boolean).slice(0, 200)
+        : undefined;
     const newEntry = {
         ...entry,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+        ...(cappedItems && cappedItems.length > 0 ? { items: cappedItems } : {}),
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 11),
     };
     // Keep only the last 100 entries to prevent the file from growing indefinitely
     const updatedHistory = [newEntry, ...currentHistory].slice(0, 100);
     try {
+        await fs.mkdir(path.dirname(getHistoryPath()), { recursive: true });
         await fs.writeFile(getHistoryPath(), JSON.stringify(updatedHistory, null, 2), 'utf-8');
     }
     catch (err) {
@@ -35,6 +40,7 @@ export async function addHistoryEntry(entry) {
 }
 export async function clearHistory() {
     try {
+        await fs.mkdir(path.dirname(getHistoryPath()), { recursive: true });
         await fs.writeFile(getHistoryPath(), '[]', 'utf-8');
     }
     catch (err) {

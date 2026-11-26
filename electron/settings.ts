@@ -1,18 +1,23 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { app } from 'electron';
+import { app, safeStorage } from 'electron';
 
 export interface AppSettings {
   scheduledCleanupEnabled: boolean;
   scheduledCleanupTime: string; // HH:mm format, e.g. "18:00"
+  launchAtStartup: boolean;
+  hasCompletedOnboarding: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   scheduledCleanupEnabled: true,
   scheduledCleanupTime: '18:00',
+  launchAtStartup: true,
+  hasCompletedOnboarding: false,
 };
 
 let settingsPath = '';
+let secretsPath = '';
 
 function getSettingsPath() {
   if (!settingsPath) {
@@ -21,12 +26,19 @@ function getSettingsPath() {
   return settingsPath;
 }
 
+function getSecretsPath() {
+  if (!secretsPath) {
+    secretsPath = path.join(app.getPath('userData'), 'smartsweep_secrets.json');
+  }
+  return secretsPath;
+}
+
 export async function getSettings(): Promise<AppSettings> {
   try {
     const data = await fs.readFile(getSettingsPath(), 'utf-8');
     const parsed = JSON.parse(data);
     return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch (error) {
+  } catch {
     // If file doesn't exist or is corrupted, return defaults
     return DEFAULT_SETTINGS;
   }
@@ -35,12 +47,79 @@ export async function getSettings(): Promise<AppSettings> {
 export async function updateSettings(newSettings: Partial<AppSettings>): Promise<AppSettings> {
   const currentSettings = await getSettings();
   const updated = { ...currentSettings, ...newSettings };
-  
+
   try {
+    await fs.mkdir(path.dirname(getSettingsPath()), { recursive: true });
     await fs.writeFile(getSettingsPath(), JSON.stringify(updated, null, 2), 'utf-8');
   } catch (error) {
     console.error('Failed to save settings:', error);
   }
-  
+
   return updated;
+}
+
+interface StoredSecretPayload {
+  encrypted: boolean;
+  data: string;
+  updatedAt: number;
+}
+
+export async function getStoredApiKey(): Promise<string | null> {
+  try {
+    const raw = await fs.readFile(getSecretsPath(), 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<StoredSecretPayload>;
+    if (!parsed.data || typeof parsed.data !== 'string') {
+      return null;
+    }
+
+    if (parsed.encrypted) {
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.warn('safeStorage encryption is unavailable; cannot decrypt stored API key.');
+        return null;
+      }
+      const decrypted = safeStorage.decryptString(Buffer.from(parsed.data, 'base64'));
+      return decrypted || null;
+    }
+
+    return Buffer.from(parsed.data, 'base64').toString('utf-8') || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setStoredApiKey(key: string | null): Promise<{ success: boolean; encrypted: boolean }> {
+  const targetPath = getSecretsPath();
+  const trimmed = typeof key === 'string' ? key.trim() : '';
+
+  if (!trimmed) {
+    try {
+      await fs.unlink(targetPath);
+    } catch {
+      // Ignore if file does not exist
+    }
+    return { success: true, encrypted: safeStorage.isEncryptionAvailable() };
+  }
+
+  try {
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    const encryptionAvailable = safeStorage.isEncryptionAvailable();
+
+    const payload: StoredSecretPayload = encryptionAvailable
+      ? {
+          encrypted: true,
+          data: safeStorage.encryptString(trimmed).toString('base64'),
+          updatedAt: Date.now(),
+        }
+      : {
+          encrypted: false,
+          data: Buffer.from(trimmed, 'utf-8').toString('base64'),
+          updatedAt: Date.now(),
+        };
+
+    await fs.writeFile(targetPath, JSON.stringify(payload, null, 2), { encoding: 'utf-8', mode: 0o600 });
+    return { success: true, encrypted: encryptionAvailable };
+  } catch (error) {
+    console.error('Failed to store API key securely:', error);
+    return { success: false, encrypted: false };
+  }
 }

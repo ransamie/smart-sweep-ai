@@ -1,6 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 async function getDirStats(dirPath: string): Promise<{ size: number; count: number }> {
   let size = 0;
@@ -19,11 +23,11 @@ async function getDirStats(dirPath: string): Promise<{ size: number; count: numb
           size += stats.size;
           count += 1;
         }
-      } catch (e) {
+      } catch {
         // Skip inaccessible items
       }
     }
-  } catch (e) {
+  } catch {
     // Ignore errors for unreadable directories
   }
   return { size, count };
@@ -60,17 +64,17 @@ async function deleteContents(dirPath: string): Promise<{ deleted: number; faile
             await recursiveDelete(fullPath);
             try {
               await fs.rm(fullPath, { recursive: true, force: true });
-            } catch (e) {}
+            } catch {}
           } else {
             await fs.chmod(fullPath, 0o666).catch(() => {});
             await fs.unlink(fullPath);
             deleted++;
           }
-        } catch (e) {
+        } catch {
           failed++;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore if directory doesn't exist
     }
   }
@@ -88,7 +92,7 @@ export interface BrowserScanResult {
 }
 
 /**
- * Dynamically discovers Chromium user profile directories (e.g. Default, Profile 1, Profile 2, System Profile)
+ * Dynamically discovers Chromium user profile directories (e.g. Default, Profile 1, Profile 2)
  */
 async function discoverChromiumProfiles(userDataPath: string): Promise<string[]> {
   const profiles: string[] = [];
@@ -99,7 +103,7 @@ async function discoverChromiumProfiles(userDataPath: string): Promise<string[]>
         profiles.push(path.join(userDataPath, entry.name));
       }
     }
-  } catch (e) {}
+  } catch {}
   return profiles;
 }
 
@@ -123,6 +127,35 @@ function getChromiumProfileTargets(profilePath: string): string[] {
   ];
 }
 
+async function addChromiumTargets(targetList: string[], userDataDirs: string[]): Promise<void> {
+  for (const dir of userDataDirs) {
+    const profiles = await discoverChromiumProfiles(dir);
+    for (const p of profiles) {
+      targetList.push(...getChromiumProfileTargets(p));
+    }
+  }
+}
+
+async function addFirefoxProfileTargets(targetList: string[], profileRootDirs: string[]): Promise<void> {
+  for (const dir of profileRootDirs) {
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const pPath = path.join(dir, entry.name);
+          targetList.push(
+            path.join(pPath, 'cache2'),
+            path.join(pPath, 'startupCache'),
+            path.join(pPath, 'jumpListCache'),
+            path.join(pPath, 'shader-cache'),
+            path.join(pPath, 'storage', 'default')
+          );
+        }
+      }
+    } catch {}
+  }
+}
+
 /**
  * Discovers and returns all scan target directories for browsers and app caches on the system.
  */
@@ -142,28 +175,11 @@ async function getAllBrowserScanTargets(): Promise<Record<string, string[]>> {
     const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
     const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming');
 
-    // 1. Google Chrome
-    const chromeUserData = path.join(localAppData, 'Google', 'Chrome', 'User Data');
-    const chromeProfiles = await discoverChromiumProfiles(chromeUserData);
-    for (const p of chromeProfiles) {
-      targets.chrome.push(...getChromiumProfileTargets(p));
-    }
+    await addChromiumTargets(targets.chrome, [path.join(localAppData, 'Google', 'Chrome', 'User Data')]);
+    await addChromiumTargets(targets.edge, [path.join(localAppData, 'Microsoft', 'Edge', 'User Data')]);
+    await addChromiumTargets(targets.brave, [path.join(localAppData, 'BraveSoftware', 'Brave-Browser', 'User Data')]);
 
-    // 2. Microsoft Edge
-    const edgeUserData = path.join(localAppData, 'Microsoft', 'Edge', 'User Data');
-    const edgeProfiles = await discoverChromiumProfiles(edgeUserData);
-    for (const p of edgeProfiles) {
-      targets.edge.push(...getChromiumProfileTargets(p));
-    }
-
-    // 3. Brave Browser
-    const braveUserData = path.join(localAppData, 'BraveSoftware', 'Brave-Browser', 'User Data');
-    const braveProfiles = await discoverChromiumProfiles(braveUserData);
-    for (const p of braveProfiles) {
-      targets.brave.push(...getChromiumProfileTargets(p));
-    }
-
-    // 4. Opera & Opera GX
+    // Opera & Opera GX (Opera stores profile directly in Opera Stable / Opera GX Stable)
     const operaPaths = [
       path.join(appData, 'Opera Software', 'Opera Stable'),
       path.join(appData, 'Opera Software', 'Opera GX Stable'),
@@ -174,29 +190,11 @@ async function getAllBrowserScanTargets(): Promise<Record<string, string[]>> {
       targets.opera.push(...getChromiumProfileTargets(op));
     }
 
-    // 5. Mozilla Firefox
-    const firefoxProfilesDirLocal = path.join(localAppData, 'Mozilla', 'Firefox', 'Profiles');
-    const firefoxProfilesDirRoaming = path.join(appData, 'Mozilla', 'Firefox', 'Profiles');
-    
-    for (const dir of [firefoxProfilesDirLocal, firefoxProfilesDirRoaming]) {
-      try {
-        const entries = await fs.readdir(dir, { withFileTypes: true });
-        for (const entry of entries) {
-          if (entry.isDirectory()) {
-            const pPath = path.join(dir, entry.name);
-            targets.firefox.push(
-              path.join(pPath, 'cache2'),
-              path.join(pPath, 'startupCache'),
-              path.join(pPath, 'jumpListCache'),
-              path.join(pPath, 'shader-cache'),
-              path.join(pPath, 'storage', 'default')
-            );
-          }
-        }
-      } catch (e) {}
-    }
+    await addFirefoxProfileTargets(targets.firefox, [
+      path.join(localAppData, 'Mozilla', 'Firefox', 'Profiles'),
+      path.join(appData, 'Mozilla', 'Firefox', 'Profiles'),
+    ]);
 
-    // 6. Popular Electron / Web-based App Caches
     targets.app_caches.push(
       path.join(appData, 'discord', 'Cache'),
       path.join(appData, 'discord', 'Code Cache'),
@@ -212,32 +210,93 @@ async function getAllBrowserScanTargets(): Promise<Record<string, string[]>> {
       path.join(appData, 'Slack', 'Cache'),
       path.join(appData, 'Slack', 'Service Worker', 'CacheStorage')
     );
-
   } else if (platform === 'darwin') {
-    // macOS
-    const chromeUserData = path.join(home, 'Library', 'Application Support', 'Google', 'Chrome');
-    const chromeProfiles = await discoverChromiumProfiles(chromeUserData);
-    for (const p of chromeProfiles) {
-      targets.chrome.push(...getChromiumProfileTargets(p));
-    }
-    targets.chrome.push(path.join(home, 'Library', 'Caches', 'Google', 'Chrome'));
+    const appSupport = path.join(home, 'Library', 'Application Support');
+    const cachesDir = path.join(home, 'Library', 'Caches');
 
-    const edgeUserData = path.join(home, 'Library', 'Application Support', 'Microsoft Edge');
-    const edgeProfiles = await discoverChromiumProfiles(edgeUserData);
-    for (const p of edgeProfiles) {
-      targets.edge.push(...getChromiumProfileTargets(p));
-    }
-    targets.edge.push(path.join(home, 'Library', 'Caches', 'Microsoft Edge'));
+    // Chrome, Edge, Brave
+    await addChromiumTargets(targets.chrome, [path.join(appSupport, 'Google', 'Chrome')]);
+    targets.chrome.push(path.join(cachesDir, 'Google', 'Chrome'));
 
-    targets.firefox.push(path.join(home, 'Library', 'Caches', 'Firefox'));
+    await addChromiumTargets(targets.edge, [path.join(appSupport, 'Microsoft Edge')]);
+    targets.edge.push(path.join(cachesDir, 'Microsoft Edge'));
+
+    await addChromiumTargets(targets.brave, [path.join(appSupport, 'BraveSoftware', 'Brave-Browser')]);
+    targets.brave.push(path.join(cachesDir, 'BraveSoftware', 'Brave-Browser'));
+
+    // Opera & Opera GX on macOS
+    targets.opera.push(
+      ...getChromiumProfileTargets(path.join(appSupport, 'com.operasoftware.Opera')),
+      ...getChromiumProfileTargets(path.join(appSupport, 'com.operasoftware.OperaGX')),
+      path.join(cachesDir, 'com.operasoftware.Opera'),
+      path.join(cachesDir, 'com.operasoftware.OperaGX'),
+    );
+
+    // Firefox on macOS
+    targets.firefox.push(path.join(cachesDir, 'Firefox'));
+    await addFirefoxProfileTargets(targets.firefox, [path.join(appSupport, 'Firefox', 'Profiles')]);
+
+    // Desktop App Caches (Discord, Spotify, VS Code, Teams, Slack) on macOS
+    targets.app_caches.push(
+      path.join(appSupport, 'discord', 'Cache'),
+      path.join(appSupport, 'discord', 'Code Cache'),
+      path.join(appSupport, 'discord', 'GPUCache'),
+      path.join(appSupport, 'discord', 'Service Worker', 'CacheStorage'),
+      path.join(cachesDir, 'com.spotify.client'),
+      path.join(appSupport, 'Spotify', 'PersistentCache'),
+      path.join(appSupport, 'Code', 'Cache'),
+      path.join(appSupport, 'Code', 'CachedData'),
+      path.join(appSupport, 'Code', 'User', 'workspaceStorage'),
+      path.join(appSupport, 'Microsoft', 'Teams', 'Cache'),
+      path.join(appSupport, 'Microsoft', 'Teams', 'GPUCache'),
+      path.join(cachesDir, 'com.microsoft.teams'),
+      path.join(cachesDir, 'com.microsoft.teams2'),
+      path.join(appSupport, 'Slack', 'Cache'),
+      path.join(appSupport, 'Slack', 'Service Worker', 'CacheStorage'),
+    );
   } else {
     // Linux
-    targets.chrome.push(
-      path.join(home, '.cache', 'google-chrome'),
-      path.join(home, '.config', 'google-chrome', 'Default', 'Cache')
+    const configDir = path.join(home, '.config');
+    const cacheDir = path.join(home, '.cache');
+
+    // Chrome, Edge, Brave
+    await addChromiumTargets(targets.chrome, [path.join(configDir, 'google-chrome')]);
+    targets.chrome.push(path.join(cacheDir, 'google-chrome'));
+
+    await addChromiumTargets(targets.edge, [path.join(configDir, 'microsoft-edge')]);
+    targets.edge.push(path.join(cacheDir, 'microsoft-edge'));
+
+    await addChromiumTargets(targets.brave, [path.join(configDir, 'BraveSoftware', 'Brave-Browser')]);
+    targets.brave.push(path.join(cacheDir, 'BraveSoftware', 'Brave-Browser'));
+
+    // Opera & Opera GX on Linux
+    targets.opera.push(
+      ...getChromiumProfileTargets(path.join(configDir, 'opera')),
+      ...getChromiumProfileTargets(path.join(configDir, 'opera-gx')),
+      path.join(cacheDir, 'opera'),
     );
-    targets.edge.push(path.join(home, '.cache', 'microsoft-edge'));
-    targets.firefox.push(path.join(home, '.cache', 'mozilla', 'firefox'));
+
+    // Firefox on Linux
+    targets.firefox.push(path.join(cacheDir, 'mozilla', 'firefox'));
+    await addFirefoxProfileTargets(targets.firefox, [path.join(home, '.mozilla', 'firefox')]);
+
+    // Desktop App Caches (Discord, Spotify, VS Code, Teams, Slack) on Linux
+    targets.app_caches.push(
+      path.join(configDir, 'discord', 'Cache'),
+      path.join(configDir, 'discord', 'Code Cache'),
+      path.join(configDir, 'discord', 'GPUCache'),
+      path.join(configDir, 'discord', 'Service Worker', 'CacheStorage'),
+      path.join(cacheDir, 'spotify'),
+      path.join(configDir, 'Code', 'Cache'),
+      path.join(configDir, 'Code', 'CachedData'),
+      path.join(configDir, 'Code', 'User', 'workspaceStorage'),
+      path.join(configDir, 'Microsoft', 'Microsoft Teams', 'Cache'),
+      path.join(configDir, 'Microsoft', 'Microsoft Teams', 'GPUCache'),
+      path.join(configDir, 'teams-for-linux', 'Cache'),
+      path.join(configDir, 'teams-for-linux', 'GPUCache'),
+      path.join(configDir, 'Slack', 'Cache'),
+      path.join(configDir, 'Slack', 'Service Worker', 'CacheStorage'),
+    );
   }
 
   return targets;
@@ -250,8 +309,9 @@ export async function scanBrowserPrivacy(): Promise<BrowserScanResult[]> {
   for (const [browserKey, paths] of Object.entries(targetsMap)) {
     let totalSize = 0;
     let fileCount = 0;
+    const uniquePaths = Array.from(new Set(paths));
 
-    for (const p of paths) {
+    for (const p of uniquePaths) {
       const stats = await getDirStats(p);
       totalSize += stats.size;
       fileCount += stats.count;
@@ -268,10 +328,6 @@ export async function scanBrowserPrivacy(): Promise<BrowserScanResult[]> {
 
   return results;
 }
-
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-const execFileAsync = promisify(execFile);
 
 export async function getRunningBrowsers(): Promise<string[]> {
   const running: string[] = [];
@@ -303,7 +359,7 @@ export async function getRunningBrowsers(): Promise<string[]> {
       if (lower.includes('opera')) running.push('Opera Browser');
       if (lower.includes('firefox')) running.push('Mozilla Firefox');
     }
-  } catch (e) {
+  } catch {
     // Process check fallback
   }
 
@@ -316,7 +372,7 @@ export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDe
   await new Promise(res => setTimeout(res, 500));
 
   const runningBrowsers = await getRunningBrowsers();
-  const selectedRunning = runningBrowsers.filter(rb => 
+  const selectedRunning = runningBrowsers.filter(rb =>
     browsers.some(b => rb.toLowerCase().includes(b.toLowerCase()))
   );
 
@@ -326,7 +382,7 @@ export async function cleanBrowserPrivacy(browsers: string[]): Promise<{ totalDe
 
   for (const browserKey of browsers) {
     const key = browserKey.toLowerCase();
-    const paths = targetsMap[key] || [];
+    const paths = Array.from(new Set(targetsMap[key] || []));
 
     for (const pPath of paths) {
       const res = await deleteContents(pPath);
@@ -364,8 +420,7 @@ export async function closeRunningBrowsers(browsers: string[]): Promise<boolean>
     }
     await new Promise(res => setTimeout(res, 500));
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
-

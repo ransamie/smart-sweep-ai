@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, CheckCircle2, FolderOpen, Sparkles } from 'lucide-react';
+import { Search, Loader2, FolderOpen, Sparkles, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/AppContext';
 import { SelectionFooter } from '@/components/SelectionFooter';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 
-const FALLBACK_PATH = '/tmp';
 const SIMULATE_DURATION_MS = 3500;
 
 export function DeepScanView() {
-  const { 
-    systemPaths, 
-    selectedDrive, 
+  const {
+    selectedDrive,
     apiKey,
     deepScanResults: results,
     setDeepScanResults: setResults,
@@ -23,14 +21,17 @@ export function DeepScanView() {
     spaceAnalyzerScanning: scanning,
     setSpaceAnalyzerScanning: setScanning,
     spaceAnalyzerProgress: progress,
-    setSpaceAnalyzerProgress: setProgress
+    setSpaceAnalyzerProgress: setProgress,
+    refreshDiskSpace,
   } = useAppContext();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const [selected, setSelected]     = useState<Set<number>>(new Set());
-  const [minSizeMB, setMinSizeMB]   = useState(100);
-
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [minSizeMB, setMinSizeMB] = useState(100);
   const [explainingPath, setExplainingPath] = useState<string | null>(null);
+  const [fileExplanations, setFileExplanations] = useState<Record<string, string>>({});
+  const [explainingFilePath, setExplainingFilePath] = useState<string | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -43,10 +44,10 @@ export function DeepScanView() {
 
   const startProgressSimulation = () => {
     setProgress(0);
-    const tickMs   = 50;
-    const steps    = SIMULATE_DURATION_MS / tickMs;
-    const perTick  = 85 / steps;
-    let current    = 0;
+    const tickMs = 50;
+    const steps = SIMULATE_DURATION_MS / tickMs;
+    const perTick = 85 / steps;
+    let current = 0;
 
     intervalRef.current = setInterval(() => {
       current += perTick;
@@ -71,21 +72,20 @@ export function DeepScanView() {
     startProgressSimulation();
 
     try {
-      // @ts-ignore
       if (window.electronAPI) {
-        // @ts-ignore
         const files: any[] = await window.electronAPI.scanDirectory(selectedDrive);
-        const largeFiles = files
-          .filter((f: any) => f.size >= minSizeMB * 1024 * 1024)
-          .map((f: any, i: number) => ({ ...f, id: i }));
+        const largeFiles = Array.isArray(files)
+          ? files
+              .filter((f: any) => f.size >= minSizeMB * 1024 * 1024)
+              .sort((a: any, b: any) => b.size - a.size)
+              .map((f: any, i: number) => ({ ...f, id: i }))
+          : [];
 
         clearProgressTimer();
         setProgress(100);
         setResults(largeFiles);
 
-        // @ts-ignore
         if (window.electronAPI.addHistoryEntry) {
-          // @ts-ignore
           await window.electronAPI.addHistoryEntry({
             timestamp: Date.now(),
             scanType: 'Space Analyzer Scan',
@@ -94,10 +94,7 @@ export function DeepScanView() {
           });
         }
 
-        // Send desktop notification if completed
-        // @ts-ignore
         if (window.electronAPI.sendNotification) {
-          // @ts-ignore
           window.electronAPI.sendNotification(
             'Space Analyzer Complete',
             `Found ${largeFiles.length} large files on ${selectedDrive}`
@@ -111,7 +108,8 @@ export function DeepScanView() {
     } finally {
       setScanning(false);
     }
-  }, [systemPaths, selectedDrive, minSizeMB]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDrive, minSizeMB]);
 
   useEffect(() => {
     if (searchParams.get('autoStart') === 'true') {
@@ -134,30 +132,29 @@ export function DeepScanView() {
   }, 0);
 
   const handleClean = async () => {
-    const pathsToDelete = Array.from(selected)
-      .map(id => results.find(f => f.id === id)?.path)
-      .filter(Boolean) as string[];
+    const selectedFiles = Array.from(selected)
+      .map(id => results.find(f => f.id === id))
+      .filter(Boolean);
+    const pathsToDelete = selectedFiles.map(f => f.path).filter(Boolean) as string[];
 
     if (pathsToDelete.length > 0) {
       try {
-        // @ts-ignore
         if (window.electronAPI) {
-          // @ts-ignore
           await window.electronAPI.deleteFiles(pathsToDelete);
-          
-          // @ts-ignore
+
           if (window.electronAPI.addHistoryEntry) {
-            // @ts-ignore
             await window.electronAPI.addHistoryEntry({
               timestamp: Date.now(),
               scanType: 'Large Files Clean',
               bytesCleaned: totalSelectedSize,
-              details: `Deleted ${pathsToDelete.length} files.`
+              details: `Moved ${pathsToDelete.length} large file(s) to quarantine.`,
+              items: pathsToDelete,
             });
           }
 
           setResults(results.filter(f => !selected.has(f.id)));
           setSelected(new Set());
+          await refreshDiskSpace();
         }
       } catch (e) {
         console.error(e);
@@ -177,14 +174,16 @@ export function DeepScanView() {
     const folders: Record<string, number> = {};
     results.forEach(f => {
       if (!f.path) return;
-      const parts = f.path.split('\\');
-      const dir = parts.slice(0, -1).join('\\') || "Unknown";
+      const parts = f.path.split(/[\\/]/);
+      const sep = f.path.includes('\\') ? '\\' : '/';
+      const dir = parts.slice(0, -1).join(sep) || 'Unknown';
       folders[dir] = (folders[dir] || 0) + (f.size || 0);
     });
 
     const data = Object.keys(folders).map(dir => {
-      const parts = dir.split('\\');
-      const name = parts.length >= 2 ? parts.slice(-2).join('\\') : parts[0] || dir;
+      const parts = dir.split(/[\\/]/).filter(Boolean);
+      const sep = dir.includes('\\') ? '\\' : '/';
+      const name = parts.length >= 2 ? parts.slice(-2).join(sep) : parts[0] || dir;
       return {
         name,
         path: dir,
@@ -197,29 +196,29 @@ export function DeepScanView() {
 
   const handleBlockClick = async (e: any) => {
     if (!e || !e.path) return;
+    if (!apiKey) {
+      setAiExplanation('Connect a Gemini API key in **Settings** to inspect folders with AI.');
+      return;
+    }
     setExplainingPath(e.path);
     setAiExplanation(null);
     try {
-      // @ts-ignore
       if (window.electronAPI && window.electronAPI.explainPath) {
-        // @ts-ignore
         const explanation = await window.electronAPI.explainPath(apiKey, e.path);
-        setAiExplanation(explanation);
+        setAiExplanation(typeof explanation === 'string' ? explanation : (explanation?.error || 'Could not explain folder.'));
       } else {
-        setAiExplanation("AI explanation feature not available.");
+        setAiExplanation('AI explanation feature not available.');
       }
     } catch (err) {
       console.error(err);
-      setAiExplanation("Error generating explanation.");
+      setAiExplanation('Error generating explanation.');
     } finally {
       setExplainingPath(null);
     }
   };
 
-  const [fileExplanations, setFileExplanations] = useState<Record<string, string>>({});
-  const [explainingFilePath, setExplainingFilePath] = useState<string | null>(null);
-
   const handleExplainFile = async (filePath: string) => {
+    if (!apiKey) return;
     if (fileExplanations[filePath]) {
       setFileExplanations(prev => {
         const copy = { ...prev };
@@ -230,13 +229,11 @@ export function DeepScanView() {
     }
     setExplainingFilePath(filePath);
     try {
-      // @ts-ignore
       if (window.electronAPI && window.electronAPI.explainPath) {
-        // @ts-ignore
         const res = await window.electronAPI.explainPath(apiKey, filePath);
         setFileExplanations(prev => ({
           ...prev,
-          [filePath]: typeof res === 'string' ? res : ((res as any)?.error || 'Could not explain file.')
+          [filePath]: typeof res === 'string' ? res : (res?.error || 'Could not explain file.')
         }));
       }
     } catch (e: any) {
@@ -248,9 +245,7 @@ export function DeepScanView() {
 
   const handleOpenFolder = async (filePath: string) => {
     try {
-      // @ts-ignore
       if (window.electronAPI && window.electronAPI.showInFolder) {
-        // @ts-ignore
         await window.electronAPI.showInFolder(filePath);
       }
     } catch (e) {
@@ -272,14 +267,13 @@ export function DeepScanView() {
 
   const CustomizedContent = (props: any) => {
     const { x, y, width, height, index, name } = props;
-    
-    // Heatmap colors based on size rank
-    let color = '#22c55e'; // green (smallest)
-    if (index === 0) color = '#ef4444'; // red (danger, largest)
-    else if (index < 3) color = '#f97316'; // orange
-    else if (index < 8) color = '#eab308'; // yellow
-    else if (index < 15) color = '#3b82f6'; // blue
-    else color = '#8b5cf6'; // purple
+
+    let color = '#22c55e';
+    if (index === 0) color = '#ef4444';
+    else if (index < 3) color = '#f97316';
+    else if (index < 8) color = '#eab308';
+    else if (index < 15) color = '#3b82f6';
+    else color = '#8b5cf6';
 
     return (
       <g>
@@ -310,14 +304,14 @@ export function DeepScanView() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Space Analyzer</h2>
           <p className="text-muted-foreground mt-1">Locate large files taking up space on {selectedDrive}.</p>
         </div>
         <div className="flex items-center gap-4">
-          <select 
+          <select
             value={minSizeMB}
             onChange={(e) => setMinSizeMB(Number(e.target.value))}
             className="h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background"
@@ -336,6 +330,17 @@ export function DeepScanView() {
         </div>
       </div>
 
+      {!apiKey && (
+        <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl border border-primary/20 bg-primary/5 text-xs">
+          <span className="text-muted-foreground">
+            <strong className="text-foreground">Local Mode:</strong> Connect a free Gemini API key in Settings to unlock AI file and treemap folder explanations.
+          </span>
+          <Button size="sm" variant="outline" onClick={() => navigate('/settings')} className="h-7 text-xs gap-1.5 shrink-0 border-primary/30 text-primary hover:bg-primary/10">
+            <Key className="w-3.5 h-3.5" /> Configure AI
+          </Button>
+        </div>
+      )}
+
       {scanning && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -350,8 +355,6 @@ export function DeepScanView() {
           </div>
         </div>
       )}
-
-
 
       <Card>
         <CardHeader>
@@ -375,7 +378,7 @@ export function DeepScanView() {
 
           {!scanning && results.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              No files found. Run a scan to locate junk files.
+              No files found. Run a scan to locate large files.
             </div>
           )}
 
@@ -398,9 +401,16 @@ export function DeepScanView() {
 
               {(explainingPath || aiExplanation) && (
                 <div className="mb-6 p-4 border rounded-md bg-muted/20">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" /> AI Folder Explanation
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" /> AI Folder Explanation
+                    </h3>
+                    {!apiKey && (
+                      <Button size="sm" variant="outline" onClick={() => navigate('/settings')} className="h-7 text-xs gap-1.5">
+                        <Key className="w-3 h-3" /> Open Settings
+                      </Button>
+                    )}
+                  </div>
                   {explainingPath ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin" /> Analyzing {explainingPath}...
@@ -451,7 +461,8 @@ export function DeepScanView() {
                           size="sm"
                           className="h-8 gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
                           onClick={() => handleExplainFile(file.path)}
-                          disabled={explainingFilePath === file.path}
+                          disabled={!apiKey || explainingFilePath === file.path}
+                          title={!apiKey ? 'Connect a Gemini API key in Settings to enable AI explanations' : 'Explain this file with AI'}
                         >
                           {explainingFilePath === file.path ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -494,6 +505,8 @@ export function DeepScanView() {
         selectedCount={selected.size}
         totalSize={formatSize(totalSelectedSize)}
         onClean={handleClean}
+        unitLabel="files"
+        actionLabel="Move to Quarantine"
       />
     </div>
   );

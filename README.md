@@ -4,13 +4,14 @@ SmartSweep AI is a free, intelligent, cross-platform desktop utility for Windows
 
 ## Key Features
 
-- **Privacy-First AI Analysis:** Connects to the Google Gemini API to analyze your system metadata (file categories, total sizes, orphaned software vendors) and deliver personalized, context-aware cleanup recommendations. **Raw file contents and personal file paths are strictly filtered and never sent to the cloud.**
-- **System Cleaner:** Recursively scans and removes temporary files, system cache, orphaned logs, and other junk that silently consumes your storage.
-- **Orphaned App Detection (App Debris):** Scans the Windows Registry to cross-reference your `AppData` and `Program Files` directories against actively installed software, identifying leftover folders from uninstalled applications.
-- **Privacy Shield:** Sweeps tracking files and browser cache from Chrome, Edge, and Firefox without removing active session cookies or logins.
-- **Startup Optimizer:** Manage which applications launch at startup, synced directly with Windows Task Manager's Startup Apps registry keys.
-- **Background Monitoring:** Runs silently in the system tray and triggers OS-level desktop notifications when junk accumulates beyond 1 GB or app debris is detected.
-- **Activity History:** Maintains a complete, reviewable log of every file deleted during each cleanup session.
+- **Privacy-First Optional AI Analysis:** Works 100% locally out of the box without requiring an API key. Optionally connect a Google Gemini API key (stored encrypted locally via Electron `safeStorage`) to receive personalized cleanup recommendations. **User home directories (`<USER_HOME>`) and personal filenames are strictly masked/sanitized before any prompt leaves your machine.**
+- **Space Analyzer (Treemap):** Recursively locates large files across any mounted drive, visualizes directory usage with an interactive Treemap, and moves selected files safely into 14-day Quarantine.
+- **System & GPU Shader Cleaner:** Scans and removes temporary files, system cache, Windows Update staging files, crash dumps, logs, and DirectX/NVIDIA/AMD/Intel GPU shader caches manually or on a daily background schedule.
+- **Orphaned App Detection (App Debris):** Cross-references `AppData`, `ProgramData`, `Program Files`, and macOS/Linux user app directories against installed applications (with strict OS/driver/runtime allowlist protections) to locate and quarantine leftover folders from uninstalled software.
+- **Privacy Shield & App Caches:** Sweeps caches and site storage across **Chrome, Edge, Brave, Opera/Opera GX, Firefox**, and **Desktop App Caches (Discord, Spotify, VS Code, Teams, Slack)** on Windows, macOS, and Linux while preserving saved logins and bookmarks.
+- **Startup Optimizer:** Manage which applications launch at startup, synced directly with Windows Task Manager (`StartupApproved`), macOS `LaunchAgents`, and Linux XDG autostart entries.
+- **14-Day Quarantine Recovery & Exportable Logs:** Inspect quarantined files and app debris folders, restore them to their original paths, or export itemized cleanup logs in CSV (RFC-4180) and JSON formats.
+- **Background Monitoring:** Runs silently in the system tray (honoring `--hidden` auto-start launches) and triggers OS-level desktop notifications when junk accumulates beyond 1 GB or newly uninstalled app debris is detected.
 - **Modern Architecture:** Built with Electron, React, TypeScript, Vite, and Tailwind CSS.
 
 ## Platform Support
@@ -74,26 +75,28 @@ On Windows, SmartSweep AI requests elevated privileges at install time (`request
 smart-sweep-ai/
 ├── electron/                   # Node.js Main Process
 │   ├── main.ts                 # App lifecycle, tray, notifications, background polling
-│   ├── preload.cts              # Secure IPC bridge (context isolation)
-│   ├── scanner.ts              # CPU-throttled recursive file scanner
-│   ├── systemCleaner.ts        # System junk & temp file removal logic
-│   ├── registry.ts             # Windows Registry reader (orphaned app detection)
-│   ├── browser.ts              # Browser cache detection (Chrome, Edge, Firefox)
-│   ├── startup.ts              # Startup program manager (Task Manager sync)
-│   ├── history.ts              # Deletion activity log
-│   ├── settings.ts             # Persistent user settings
-│   ├── ai.ts                   # Google Gemini API integration
+│   ├── preload.cts             # Secure IPC bridge (context isolation)
+│   ├── scanner.ts              # Recursive file scanner & 14-day quarantine manager
+│   ├── appDebris.ts            # Cross-platform orphaned app debris detector
+│   ├── systemCleaner.ts        # System junk, temp & GPU shader cache removal logic
+│   ├── registry.ts             # Installed apps reader (Windows Registry, macOS, Linux)
+│   ├── browser.ts              # Browser & desktop app cache cleaner (Chrome, Edge, Brave, Opera, Firefox)
+│   ├── startup.ts              # Startup program manager (Task Manager / LaunchAgents / XDG sync)
+│   ├── history.ts              # Itemized deletion activity log
+│   ├── settings.ts             # Persistent settings & safeStorage encrypted secrets
+│   ├── ai.ts                   # Google Gemini API integration with strict path sanitization
 │   └── splash.html             # Splash screen shown on launch
 ├── src/                        # React Renderer Process
 │   ├── components/             # Reusable UI elements (Sidebar, Layout, etc.)
 │   ├── context/                # Global state (AppContext)
 │   ├── pages/                  # Application views:
-│   │   ├── DashboardView.tsx   # Main overview with storage stats
+│   │   ├── DashboardView.tsx   # Main overview with Health Score & storage stats
 │   │   ├── SystemCleanerView.tsx
-│   │   ├── DeepScanView.tsx    # App debris / orphaned folder scanner
+│   │   ├── DeepScanView.tsx    # Space Analyzer & interactive Treemap
+│   │   ├── AppDebrisView.tsx   # Orphaned application folder scanner & cleaner
 │   │   ├── PrivacyShieldView.tsx
 │   │   ├── StartupOptimizerView.tsx
-│   │   ├── HistoryView.tsx
+│   │   ├── HistoryView.tsx     # Activity logs (CSV/JSON export) & Quarantine Recovery
 │   │   ├── SettingsView.tsx
 │   │   └── OnboardingView.tsx
 │   └── main.tsx                # React entry point

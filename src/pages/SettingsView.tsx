@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2, Download, RefreshCw } from 'lucide-react';
+import { Key, ShieldCheck, HardDrive, Clock, CheckCircle2, XCircle, Loader2, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +18,11 @@ export function SettingsView() {
   const [downloadedVersion, setDownloadedVersion] = useState<string | null>(null);
 
   useEffect(() => {
-    // @ts-ignore
+    setLocalKey(apiKey || '');
+  }, [apiKey]);
+
+  useEffect(() => {
     if (window.electronAPI?.onUpdateDownloaded) {
-      // @ts-ignore
       window.electronAPI.onUpdateDownloaded((ver: string) => {
         setDownloadedVersion(ver);
         setUpdateStatus(`Version ${ver} has finished downloading and is ready to install!`);
@@ -29,9 +31,7 @@ export function SettingsView() {
   }, []);
 
   const handleRestartAndInstall = () => {
-    // @ts-ignore
     if (window.electronAPI?.restartAndInstall) {
-      // @ts-ignore
       window.electronAPI.restartAndInstall();
     }
   };
@@ -40,9 +40,7 @@ export function SettingsView() {
     setCheckingUpdate(true);
     setUpdateStatus(null);
     try {
-      // @ts-ignore
       if (window.electronAPI?.checkForUpdates) {
-        // @ts-ignore
         const result = await window.electronAPI.checkForUpdates();
         if (result.error) {
           setUpdateStatus(`Error: ${result.error}`);
@@ -63,7 +61,7 @@ export function SettingsView() {
 
   const handleSaveKey = async () => {
     if (!localKey.trim()) {
-      setStatus({ type: 'error', message: 'Please enter an API Key.' });
+      setStatus({ type: 'error', message: 'Please enter an API Key, or click Remove Key to use Local Mode.' });
       return;
     }
 
@@ -71,13 +69,11 @@ export function SettingsView() {
     setStatus(null);
 
     try {
-      // @ts-ignore
       if (window.electronAPI?.validateApiKey) {
-        // @ts-ignore
         const isValid = await window.electronAPI.validateApiKey(localKey.trim());
         if (isValid) {
           setApiKey(localKey.trim());
-          setStatus({ type: 'success', message: 'Validated & Saved!' });
+          setStatus({ type: 'success', message: 'Validated & Saved (Encrypted Locally)!' });
         } else {
           setStatus({ type: 'error', message: 'Invalid API Key. Please verify key.' });
         }
@@ -92,33 +88,39 @@ export function SettingsView() {
     }
   };
 
+  const handleRemoveKey = () => {
+    setApiKey(null);
+    setLocalKey('');
+    setStatus({ type: 'success', message: 'API key removed. SmartSweep AI continues in Local Mode.' });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <div className="flex items-center gap-3">
           <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
         </div>
-        <p className="text-muted-foreground mt-1">Manage your application preferences and AI configuration.</p>
+        <p className="text-muted-foreground mt-1">Manage your application preferences and optional AI configuration.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Key className="w-5 h-5 text-primary" /> API Configuration
+            <Key className="w-5 h-5 text-primary" /> API Configuration (Optional)
           </CardTitle>
-          <CardDescription>Configure and test your connection to the Gemini API.</CardDescription>
+          <CardDescription>Configure or remove your Gemini API key. Core local scanning and cleaning work without a key.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Gemini API Key</label>
             <div className="flex gap-3 items-center flex-wrap">
-              <Input 
-                type="password" 
-                value={localKey} 
+              <Input
+                type="password"
+                value={localKey}
                 onChange={(e) => {
                   setLocalKey(e.target.value);
                   setStatus(null);
-                }} 
+                }}
                 placeholder="AIzaSy..."
                 className="max-w-md font-mono"
               />
@@ -126,6 +128,12 @@ export function SettingsView() {
                 {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 {validating ? 'Validating…' : 'Save Key'}
               </Button>
+
+              {apiKey && (
+                <Button onClick={handleRemoveKey} disabled={validating} variant="outline" className="gap-2 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                  <Trash2 className="w-4 h-4" /> Remove Key
+                </Button>
+              )}
 
               {status?.type === 'success' && (
                 <div className="flex items-center gap-1.5 text-xs text-green-400 font-semibold bg-green-500/10 border border-green-500/30 px-3 py-1.5 rounded-lg animate-in fade-in">
@@ -141,7 +149,9 @@ export function SettingsView() {
                 </div>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Used exclusively for generating system cleanup advice.</p>
+            <p className="text-xs text-muted-foreground">
+              Stored encrypted on your local machine using OS-backed secure storage. Used exclusively for optional AI recommendations.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -161,49 +171,63 @@ export function SettingsView() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-purple-500" /> Automation
+            <Clock className="w-5 h-5 text-purple-500" /> Automation & Startup
           </CardTitle>
-          <CardDescription>Configure automatic system cleanup schedules.</CardDescription>
+          <CardDescription>Configure background launch behavior and automatic system cleanup schedules.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Daily System Cleanup</p>
-              <p className="text-xs text-muted-foreground mt-1">Automatically remove temporary system junk in the background.</p>
+              <p className="font-medium text-sm">Launch at System Startup (Minimized to Tray)</p>
+              <p className="text-xs text-muted-foreground mt-1">Automatically start SmartSweep AI silently in the background when you sign in.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 className="sr-only peer"
-                checked={automationSettings?.scheduledCleanupEnabled ?? true}
+                checked={automationSettings?.launchAtStartup ?? true}
                 onChange={(e) => {
-                  if (automationSettings) {
-                    setAutomationSettings({
-                      ...automationSettings,
-                      scheduledCleanupEnabled: e.target.checked
-                    });
-                  }
+                  setAutomationSettings({
+                    launchAtStartup: e.target.checked
+                  });
                 }}
               />
               <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
           </div>
-          
+
+          <div className="flex items-center justify-between pt-4 border-t border-border/40">
+            <div>
+              <p className="font-medium text-sm">Daily System Cleanup</p>
+              <p className="text-xs text-muted-foreground mt-1">Automatically remove temporary system junk in the background.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={automationSettings?.scheduledCleanupEnabled ?? true}
+                onChange={(e) => {
+                  setAutomationSettings({
+                    scheduledCleanupEnabled: e.target.checked
+                  });
+                }}
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium opacity-90">Cleanup Time</label>
             <div className="flex gap-4">
-              <Input 
-                type="time" 
+              <Input
+                type="time"
                 className="max-w-[150px]"
                 disabled={!automationSettings?.scheduledCleanupEnabled}
                 value={automationSettings?.scheduledCleanupTime ?? '18:00'}
                 onChange={(e) => {
-                  if (automationSettings) {
-                    setAutomationSettings({
-                      ...automationSettings,
-                      scheduledCleanupTime: e.target.value
-                    });
-                  }
+                  setAutomationSettings({
+                    scheduledCleanupTime: e.target.value
+                  });
                 }}
               />
             </div>
@@ -216,17 +240,15 @@ export function SettingsView() {
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-green-500" /> Privacy & Security
           </CardTitle>
-          <CardDescription>Your data privacy settings.</CardDescription>
+          <CardDescription>Your data privacy protections.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-            SmartSweep AI uses strict local filters. When sending data to Google Gemini API, we only send directory sizes, 
-            file extensions, and application vendor names. Personal file names, document contents, and deep paths 
-            are never transmitted over the network.
+            SmartSweep AI enforces strict local path sanitization. Before any optional Gemini AI request is made, user home directories are masked as <code className="text-foreground">&lt;USER_HOME&gt;</code> and personal filenames inside Downloads, Documents, Desktop, and media folders are redacted while preserving safe application vendor context and file extensions.
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
